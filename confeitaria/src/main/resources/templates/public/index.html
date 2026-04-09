@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Confeitaria Artesanal — Feito com Amor</title>
+  <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <div class="nav-logo">🎂 Confeitaria</div>
+    <div class="nav-links">
+      <a href="#galeria">Galeria</a>
+      <a href="#depoimentos">Depoimentos</a>
+      <a th:href="@{/faq}">FAQ</a>
+      <a th:href="@{/contato}" class="btn btn-primary btn-sm" style="margin-left:1.5rem">Fazer Pedido</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-content">
+    <h1>Doces feitos com <span>amor</span> e dedicação</h1>
+    <p>Bolos decorados, doces finos e sobremesas artesanais preparados sob encomenda para tornar seus momentos ainda mais especiais.</p>
+    <a th:href="@{/contato(ref=${ref})}" class="btn btn-primary" style="margin-right:1rem">✉️ Fazer Pedido</a>
+    <a href="#galeria" class="btn btn-secondary">Ver Criações</a>
+  </div>
+</section>
+
+<!-- REFERRAL BANNER -->
+<div th:if="${ref != null}" style="background: linear-gradient(135deg,#fde8f0,#e3f0fb); text-align:center; padding:1rem; font-weight:600; color:#6b4a58;">
+  🎉 Você veio por indicação! Mencione <strong th:text="${ref}"></strong> ao entrar em contato e ganhe condições especiais.
+</div>
+
+<!-- GALLERY SECTION -->
+<section class="section" id="galeria">
+  <div class="section-title">
+    <h2>Nossas Criações</h2>
+    <div class="section-divider"></div>
+    <p>Cada produto é feito com ingredientes selecionados e muito carinho</p>
+  </div>
+  <div class="gallery-grid">
+    <div class="card gallery-item" th:each="item : ${gallery}">
+      <img th:if="${item.imagePath != null}" th:src="${item.imagePath}" th:alt="${item.title}"/>
+      <div th:unless="${item.imagePath != null}" class="gallery-placeholder">🎂</div>
+      <div class="card-body">
+        <h3 style="font-size:1.1rem; margin-bottom:0.3rem;" th:text="${item.title}">Bolo</h3>
+        <p style="color:#9e7a8a; font-size:0.9rem;" th:text="${item.description}">Descrição</p>
+      </div>
+    </div>
+    <div class="card gallery-item" th:if="${#lists.isEmpty(gallery)}">
+      <div class="gallery-placeholder">🎂</div>
+      <div class="card-body">
+        <h3 style="font-size:1.1rem">Bolo de Aniversário</h3>
+        <p style="color:#9e7a8a; font-size:0.9rem">Personalizados para cada ocasião especial</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section style="background: linear-gradient(135deg,var(--pink-100),var(--blue-100)); padding:4rem 2rem;" id="depoimentos">
+  <div style="max-width:1100px; margin:0 auto;">
+    <div class="section-title">
+      <h2>O que nossos clientes dizem</h2>
+      <div class="section-divider"></div>
+    </div>
+    <div class="testimonials-grid">
+      <div class="testimonial-card" th:each="t : ${testimonials}">
+        <p class="testimonial-text" th:text="${t.text}"></p>
+        <div>
+          <span class="stars" th:text="${'★'.repeat(t.rating) + '☆'.repeat(5 - t.rating)}"></span>
+          <div class="testimonial-author" th:text="${t.clientName}"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT SECTION -->
+<section class="section" id="contato">
+  <div class="section-title">
+    <h2>Faça seu Pedido</h2>
+    <div class="section-divider"></div>
+    <p>Conte-nos o que você está imaginando e vamos criar juntos!</p>
+  </div>
+  <div class="form-card">
+    <form th:action="@{/contato}" th:object="${contact}" method="post">
+      <input type="hidden" name="ref" th:value="${ref}"/>
+      <input type="hidden" name="source" value="landing-page"/>
+      <div class="form-group">
+        <label>Nome *</label>
+        <input type="text" th:field="*{name}" placeholder="Seu nome completo" required/>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+        <div class="form-group">
+          <label>E-mail *</label>
+          <input type="email" th:field="*{email}" placeholder="seu@email.com" required/>
+        </div>
+        <div class="form-group">
+          <label>WhatsApp</label>
+          <input type="tel" th:field="*{phone}" placeholder="(11) 99999-9999"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Como nos encontrou?</label>
+        <select name="source">
+          <option value="landing-page">Site</option>
+          <option value="instagram">Instagram</option>
+          <option value="indicacao">Indicação</option>
+          <option value="google">Google</option>
+          <option value="outro">Outro</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Sua mensagem / pedido *</label>
+        <textarea th:field="*{message}" placeholder="Descreva o que você deseja: tipo de bolo, sabor, quantidade, data do evento..." required></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%; padding:1rem; font-size:1rem;">✉️ Enviar Mensagem</button>
+    </form>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <p>🎂 Confeitaria Artesanal — Feito com amor, entregue com carinho</p>
+  <p style="margin-top:0.5rem; font-size:0.8rem;">
+    <a th:href="@{/faq}">FAQ</a> · <a th:href="@{/contato}">Contato</a> · <a th:href="@{/admin}">Admin</a>
+  </p>
+</footer>
+
+<script>
+  // FAQ accordion
+  document.querySelectorAll('.faq-question').forEach(q => {
+    q.addEventListener('click', () => {
+      q.parentElement.classList.toggle('open');
+    });
+  });
+
+  // Smooth scroll
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      document.querySelector(a.getAttribute('href'))?.scrollIntoView({behavior: 'smooth'});
+    });
+  });
+</script>
+</body>
+</html>

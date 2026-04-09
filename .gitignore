@@ -1,0 +1,23 @@
+# Maven / Java
+**/target/
+**/*.class
+**/.classpath
+**/.project
+**/.settings/
+
+# IntelliJ / VSCode
+**/.idea/
+**/*.iml
+**/.vscode/
+
+# OS
+**/Thumbs.db
+**/Desktop.ini
+
+# App runtime data (não versionar)
+confeitaria/data/
+confeitaria/uploads/
+
+# Ferramentas baixadas localmente (Maven zip/extraído)
+confeitaria/.tools/
+

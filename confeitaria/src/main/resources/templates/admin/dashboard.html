@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard — Admin Confeitaria</title>
+  <link rel="stylesheet" th:href="@{/css/admin.css}"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-logo">🎂 Confeitaria<span>Painel Administrativo</span></div>
+  <nav class="sidebar-nav">
+    <div class="sidebar-section">Geral</div>
+    <a th:href="@{/admin}" th:classappend="${currentPage == 'dashboard'} ? 'active' : ''"><span class="icon">📊</span> Dashboard</a>
+    <a th:href="@{/admin/contatos}" th:classappend="${currentPage == 'contatos'} ? 'active' : ''"><span class="icon">📬</span> Contatos</a>
+
+    <div class="sidebar-section">Conteúdo</div>
+    <a th:href="@{/admin/galeria}" th:classappend="${currentPage == 'galeria'} ? 'active' : ''"><span class="icon">🖼️</span> Galeria</a>
+    <a th:href="@{/admin/depoimentos}" th:classappend="${currentPage == 'depoimentos'} ? 'active' : ''"><span class="icon">💬</span> Depoimentos</a>
+    <a th:href="@{/admin/faqs}" th:classappend="${currentPage == 'faqs'} ? 'active' : ''"><span class="icon">❓</span> FAQs</a>
+
+    <div class="sidebar-section">Financeiro</div>
+    <a th:href="@{/admin/ingredientes}" th:classappend="${currentPage == 'ingredientes'} ? 'active' : ''"><span class="icon">🥚</span> Ingredientes</a>
+    <a th:href="@{/admin/receitas}" th:classappend="${currentPage == 'receitas'} ? 'active' : ''"><span class="icon">📋</span> Receitas</a>
+    <a th:href="@{/admin/vendas}" th:classappend="${currentPage == 'vendas'} ? 'active' : ''"><span class="icon">💰</span> Vendas</a>
+  </nav>
+  <div class="sidebar-footer">
+    <a th:href="@{/}" target="_blank"><span>🌐</span> Ver Site</a>
+    <br/><br/>
+    <a th:href="@{/admin/logout}"><span>🚪</span> Sair</a>
+  </div>
+</div>
+
+<div class="main-content">
+  <div class="topbar">
+    <div class="topbar-title" th:text="${pageTitle ?: 'Dashboard'}">Dashboard</div>
+    <div class="topbar-user">👤 admin</div>
+  </div>
+
+  <div class="page-content">
+
+    <!-- DASHBOARD CONTENT -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon pink">📬</div>
+        <div>
+          <div class="stat-value" th:text="${totalContacts}">0</div>
+          <div class="stat-label">Contatos Recebidos</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon blue">💰</div>
+        <div>
+          <div class="stat-value" th:text="${totalSales}">0</div>
+          <div class="stat-label">Vendas Registradas</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green">📋</div>
+        <div>
+          <div class="stat-value" th:text="${totalRecipes}">0</div>
+          <div class="stat-label">Receitas Cadastradas</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon gold">🔗</div>
+        <div>
+          <div class="stat-value" th:text="${#lists.size(referralLinks)}">0</div>
+          <div class="stat-label">Links de Indicação</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <!-- Source chart -->
+      <div class="chart-card">
+        <h3>📊 Origem dos Contatos</h3>
+        <div class="chart-wrapper">
+          <canvas id="sourceChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Referral stats -->
+      <div class="chart-card">
+        <h3>🔗 Links de Indicação</h3>
+        <table>
+          <thead><tr><th>Código</th><th>Indicador</th><th>Visitas</th><th>Conversões</th></tr></thead>
+          <tbody>
+            <tr th:each="ref : ${referralLinks}">
+              <td><span class="badge badge-pink" th:text="${ref.code}"></span></td>
+              <td th:text="${ref.referrerName}">Nome</td>
+              <td th:text="${ref.visits}">0</td>
+              <td th:text="${ref.conversions}">0</td>
+            </tr>
+          </tbody>
+        </table>
+        <div style="margin-top:1rem; border-top:1px solid #f0e6ec; padding-top:1rem;">
+          <form th:action="@{/admin/referral/add}" method="post" style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+            <input type="text" name="code" placeholder="Código (ex: FULANA)" style="flex:1; min-width:120px;"/>
+            <input type="text" name="referrerName" placeholder="Nome do indicador" style="flex:2; min-width:150px;"/>
+            <button type="submit" class="btn btn-primary btn-sm">+ Adicionar</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent contacts -->
+    <div class="table-card">
+      <div class="table-header">
+        <h3>📬 Contatos Recentes</h3>
+        <a th:href="@{/admin/contatos}" class="btn btn-outline btn-sm">Ver todos</a>
+      </div>
+      <table>
+        <thead><tr><th>Nome</th><th>E-mail</th><th>Origem</th><th>Referral</th><th>Data</th></tr></thead>
+        <tbody>
+          <tr th:each="c : ${recentContacts}">
+            <td th:text="${c.name}">Nome</td>
+            <td th:text="${c.email}">email</td>
+            <td><span class="badge badge-blue" th:text="${c.source ?: 'site'}"></span></td>
+            <td><span class="badge badge-pink" th:if="${c.referralCode}" th:text="${c.referralCode}"></span></td>
+            <td style="font-size:0.8rem;" th:text="${#temporals.format(c.createdAt,'dd/MM/yy HH:mm')}"></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div><!-- end page-content -->
+</div><!-- end main-content -->
+
+<script th:inline="javascript">
+  const sourceCounts = /*[[${sourceCounts}]]*/ [];
+  const labels = sourceCounts.map(r => r[0] || 'desconhecido');
+  const data = sourceCounts.map(r => Number(r[1]));
+
+  new Chart(document.getElementById('sourceChart'), {
+    type: 'doughnut',
+    data: {
+      labels: labels,
+      datasets: [{
+        data: data,
+        backgroundColor: ['#f7a0be','#91beec','#fbc4d8','#bcd9f5','#e8527e','#5e9ade'],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom' } }
+    }
+  });
+</script>
+</body>
+</html>

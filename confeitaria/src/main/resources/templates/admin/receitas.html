@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Receitas — Admin</title>
+  <link rel="stylesheet" th:href="@{/css/admin.css}"/>
+</head>
+<body>
+<div class="sidebar">
+  <div class="sidebar-logo">🎂 Confeitaria<span>Painel Administrativo</span></div>
+  <nav class="sidebar-nav">
+    <div class="sidebar-section">Geral</div>
+    <a th:href="@{/admin}"><span class="icon">📊</span> Dashboard</a>
+    <a th:href="@{/admin/contatos}"><span class="icon">📬</span> Contatos</a>
+    <div class="sidebar-section">Conteúdo</div>
+    <a th:href="@{/admin/galeria}"><span class="icon">🖼️</span> Galeria</a>
+    <a th:href="@{/admin/depoimentos}"><span class="icon">💬</span> Depoimentos</a>
+    <a th:href="@{/admin/faqs}"><span class="icon">❓</span> FAQs</a>
+    <div class="sidebar-section">Financeiro</div>
+    <a th:href="@{/admin/ingredientes}"><span class="icon">🥚</span> Ingredientes</a>
+    <a th:href="@{/admin/receitas}" class="active"><span class="icon">📋</span> Receitas</a>
+    <a th:href="@{/admin/vendas}"><span class="icon">💰</span> Vendas</a>
+  </nav>
+  <div class="sidebar-footer"><a th:href="@{/}" target="_blank">🌐 Ver Site</a><br/><br/><a th:href="@{/admin/logout}">🚪 Sair</a></div>
+</div>
+<div class="main-content">
+  <div class="topbar"><div class="topbar-title">📋 Receitas e Custos</div><div class="topbar-user">👤 admin</div></div>
+  <div class="page-content">
+
+    <div class="alert alert-info">
+      💡 Crie a receita aqui e depois clique em "Ver Detalhes" para adicionar os ingredientes e ver o cálculo de custo automático.
+    </div>
+
+    <div class="admin-form">
+      <h3 style="margin-bottom:1rem;">➕ Nova Receita</h3>
+      <form th:action="@{/admin/receitas/add}" method="post">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nome da receita</label>
+            <input type="text" name="name" placeholder="Ex: Bolo de Chocolate" required/>
+          </div>
+          <div class="form-group">
+            <label>Categoria</label>
+            <select name="category">
+              <option value="bolo">Bolo</option>
+              <option value="torta">Torta</option>
+              <option value="brigadeiro">Brigadeiro / Doce</option>
+              <option value="cupcake">Cupcake</option>
+              <option value="cookie">Cookie</option>
+              <option value="outro">Outro</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Rendimento em gramas</label>
+            <input type="number" name="yieldGrams" step="1" min="1" placeholder="Ex: 1500"/>
+          </div>
+          <div class="form-group">
+            <label>Descrição do rendimento</label>
+            <input type="text" name="yieldDescription" placeholder="Ex: 1 bolo 20cm / 30 unidades"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Descrição (opcional)</label>
+          <textarea name="description" placeholder="Notas sobre a receita..."></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">📋 Criar Receita</button>
+      </form>
+    </div>
+
+    <div class="table-card">
+      <div class="table-header"><h3>Receitas Cadastradas</h3></div>
+      <table>
+        <thead><tr><th>Nome</th><th>Categoria</th><th>Rendimento</th><th>Custo Total</th><th>Preço Sugerido</th><th>Ações</th></tr></thead>
+        <tbody>
+          <tr th:each="r : ${recipes}">
+            <td><strong th:text="${r.name}"></strong></td>
+            <td><span class="badge badge-pink" th:text="${r.category}"></span></td>
+            <td th:text="${r.yieldDescription ?: (r.yieldGrams != null ? r.yieldGrams + 'g' : '-')}"></td>
+            <td>
+              <span class="badge badge-blue">
+                R$ <span th:text="${#numbers.formatDecimal(r.costTotal, 1, 'COMMA', 2, 'POINT')}"></span>
+              </span>
+            </td>
+            <td>
+              <span class="badge badge-green" style="font-size:0.9rem;">
+                R$ <span th:text="${#numbers.formatDecimal(r.recommendedPrice, 1, 'COMMA', 2, 'POINT')}"></span>
+              </span>
+            </td>
+            <td style="display:flex;gap:0.5rem;">
+              <a th:href="@{/admin/receitas/{id}(id=${r.id})}" class="btn btn-blue btn-sm">🔍 Detalhes</a>
+              <form th:action="@{/admin/receitas/delete/{id}(id=${r.id})}" method="post" onsubmit="return confirm('Excluir receita?')">
+                <button type="submit" class="btn btn-danger btn-sm">🗑</button>
+              </form>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</body>
+</html>
