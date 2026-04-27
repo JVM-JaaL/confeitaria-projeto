@@ -1,23 +1,30 @@
-# Maven / Java
-**/target/
-**/*.class
-**/.classpath
-**/.project
-**/.settings/
+# Java / Maven
+target/
+*.class
 
-# IntelliJ / VSCode
-**/.idea/
-**/*.iml
-**/.vscode/
+# IDEs
+.idea/
+.vscode/
+*.iml
 
 # OS
-**/Thumbs.db
-**/Desktop.ini
+Thumbs.db
+Desktop.ini
 
-# App runtime data (não versionar)
+# Logs
+*.log
+
+# H2 database files (project uses ./data)
 confeitaria/data/
-confeitaria/uploads/
+data/
+*.mv.db
+*.trace.db
 
-# Ferramentas baixadas localmente (Maven zip/extraído)
+# Uploads (runtime files)
+confeitaria/uploads/
+uploads/
+
+# Local tools downloaded during setup
 confeitaria/.tools/
+.tools/
 
