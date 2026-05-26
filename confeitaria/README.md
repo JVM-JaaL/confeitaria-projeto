@@ -73,10 +73,13 @@ confeitaria/
 ### Site Público
 | URL | Descrição |
 |-----|-----------|
-| `http://localhost:8080/` | Landing page principal |
-| `http://localhost:8080/?ref=CODIGO` | Landing com banner de indicação |
-| `http://localhost:8080/faq` | Perguntas frequentes |
-| `http://localhost:8080/contato` | Formulário de contato |
+| `http://localhost:8080/` | Início (hero e links para as demais páginas) |
+| `http://localhost:8080/?ref=CODIGO` | Início com banner de indicação |
+| `http://localhost:8080/galeria` | Galeria de fotos |
+| `http://localhost:8080/depoimentos` | Depoimentos de clientes |
+| `http://localhost:8080/perguntas-frequentes` | Perguntas frequentes |
+| `http://localhost:8080/faq` | Alias da página de perguntas frequentes |
+| `http://localhost:8080/contato` | Formulário de contato / pedido |
 
 ### Painel Admin
 | URL | Descrição |
@@ -86,6 +89,7 @@ confeitaria/
 | `/admin/galeria` | Gerenciar fotos e produtos |
 | `/admin/depoimentos` | Gerenciar avaliações de clientes |
 | `/admin/faqs` | Gerenciar perguntas frequentes |
+| `/admin/links-utm` | Gerenciar links UTM e copiar URLs de campanha |
 | `/admin/ingredientes` | Cadastrar ingredientes e preços por kg |
 | `/admin/receitas` | Receitas com cálculo de custo automático |
 | `/admin/vendas` | Registro e análise de vendas com gráficos |
@@ -112,6 +116,16 @@ Crie links personalizados no Dashboard:
 - `http://localhost:8080/?ref=INSTAGRAM`
 
 O sistema registra visitas e conversões (formulários enviados) por link.
+
+### Links UTM (campanhas)
+
+No admin, acesse **Links UTM** (`/admin/links-utm`): cadastre nome, URL base (ex.: página de contato) e parâmetros `utm_source`, `utm_medium`, `utm_campaign` (e opcionalmente `utm_term`, `utm_content`). Use **Visualizar** para copiar a URL completa.
+
+Quando alguém entra pelo link, os parâmetros ficam na **sessão** e são reaplicados na navegação até o envio do formulário de contato; os valores são gravados no lead junto com **Referral** (`ref`), se houver.
+
+Exemplo manual na URL:
+
+`http://localhost:8080/contato?utm_source=instagram&utm_medium=social&utm_campaign=pascoa`
 
 ---
 

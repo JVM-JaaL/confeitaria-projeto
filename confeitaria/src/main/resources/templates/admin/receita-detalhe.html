@@ -12,13 +12,16 @@
     <div class="sidebar-section">Geral</div>
     <a th:href="@{/admin}"><span class="icon">📊</span> Dashboard</a>
     <a th:href="@{/admin/contatos}"><span class="icon">📬</span> Contatos</a>
+    <a th:href="@{/admin/links-utm}"><span class="icon">🔗</span> Links UTM</a>
     <div class="sidebar-section">Conteúdo</div>
     <a th:href="@{/admin/galeria}"><span class="icon">🖼️</span> Galeria</a>
     <a th:href="@{/admin/depoimentos}"><span class="icon">💬</span> Depoimentos</a>
     <a th:href="@{/admin/faqs}"><span class="icon">❓</span> FAQs</a>
     <div class="sidebar-section">Financeiro</div>
     <a th:href="@{/admin/ingredientes}"><span class="icon">🥚</span> Ingredientes</a>
+    <a th:href="@{/admin/gastos-mensais}"><span class="icon">📆</span> Gastos mensais</a>
     <a th:href="@{/admin/receitas}" class="active"><span class="icon">📋</span> Receitas</a>
+    <a th:href="@{/admin/financeiro}" th:classappend="${currentPage == 'financeiro'} ? 'active' : ''"><span class="icon">📈</span> Análise financeira</a>
     <a th:href="@{/admin/vendas}"><span class="icon">💰</span> Vendas</a>
   </nav>
   <div class="sidebar-footer"><a th:href="@{/}" target="_blank">🌐 Ver Site</a><br/><br/><a th:href="@{/admin/logout}">🚪 Sair</a></div>
@@ -30,8 +33,13 @@
   </div>
   <div class="page-content">
 
-    <div style="margin-bottom:1rem;">
+    <div style="margin-bottom:1rem;display:flex;flex-wrap:wrap;gap:0.75rem;align-items:center;">
       <a th:href="@{/admin/receitas}" class="btn btn-outline btn-sm">← Voltar às Receitas</a>
+      <span style="font-size:0.85rem;color:var(--text-mid);">Custo fixo referente a:</span>
+      <a th:href="@{/admin/receitas/{id}(id=${recipe.id},mes=${prevMonth})}" class="btn btn-outline btn-sm">← Mês</a>
+      <strong style="font-size:0.9rem;" th:text="${referenceMonth}"></strong>
+      <a th:href="@{/admin/receitas/{id}(id=${recipe.id},mes=${nextMonth})}" class="btn btn-outline btn-sm">Mês →</a>
+      <a th:href="@{/admin/receitas/{id}(id=${recipe.id})}" class="btn btn-outline btn-sm">Atual</a>
     </div>
 
     <div class="two-col">
@@ -95,23 +103,42 @@
           <hr style="border:none;border-top:1px solid rgba(200,120,150,0.2);margin:0.8rem 0;"/>
 
           <div class="cost-row">
-            <span class="cost-label">📦 Custo bruto dos ingredientes:</span>
+            <span class="cost-label">📦 1. Custo bruto (ingredientes):</span>
             <span class="cost-value">
-              R$ <span th:text="${#numbers.formatDecimal(recipe.costTotal.divide(new java.math.BigDecimal('1.05'),4,T(java.math.RoundingMode).HALF_UP),1,'COMMA',2,'POINT')}"></span>
+              R$ <span th:text="${#numbers.formatDecimal(recipe.ingredientCostRaw,1,'COMMA',2,'POINT')}"></span>
             </span>
           </div>
 
           <div class="cost-row">
-            <span class="cost-label">⚙️ Custo marginal (+5%):</span>
+            <span class="cost-label">⚙️ 2. Custo marginal ingredientes (+5%):</span>
             <span class="cost-value" style="color:var(--blue-500);">
-              R$ <span th:text="${#numbers.formatDecimal(recipe.costTotal,1,'COMMA',2,'POINT')}"></span>
+              R$ <span th:text="${#numbers.formatDecimal(recipe.marginalCost,1,'COMMA',2,'POINT')}"></span>
+            </span>
+          </div>
+
+          <div class="cost-row">
+            <span class="cost-label">📆 3. Rateio gastos fixos (<span th:text="${referenceMonth}"></span>):</span>
+            <span class="cost-value">
+              R$ <span th:text="${#numbers.formatDecimal(fixedAllocationPerUnit,1,'COMMA',2,'POINT')}"></span>
+            </span>
+          </div>
+          <p th:if="${estimatedMonthlyUnits.compareTo(T(java.math.BigDecimal).ZERO) == 0}" style="font-size:0.75rem;color:#c45b7a;margin:0 0 0.5rem 0;">
+            Defina a produção mensal estimada em <a th:href="@{/admin/gastos-mensais(mes=${referenceMonth})}">Gastos mensais</a> para ativar o rateio.
+          </p>
+
+          <hr style="border:none;border-top:1px solid rgba(200,120,150,0.2);margin:0.8rem 0;"/>
+
+          <div class="cost-row">
+            <span class="cost-label">🏭 4. Custo total de produção (ingr. + fixos):</span>
+            <span class="cost-value" style="font-weight:700;">
+              R$ <span th:text="${#numbers.formatDecimal(fullProductionCost,1,'COMMA',2,'POINT')}"></span>
             </span>
           </div>
 
           <div th:if="${recipe.yieldGrams != null and recipe.yieldGrams > 0}" class="cost-row">
-            <span class="cost-label">📊 Custo por grama:</span>
+            <span class="cost-label">📊 Custo por grama (produção):</span>
             <span class="cost-value">
-              R$ <span th:text="${#numbers.formatDecimal(recipe.costPerGram,1,'COMMA',4,'POINT')}"></span>/g
+              R$ <span th:text="${#numbers.formatDecimal(costPerGramProduction,1,'COMMA',4,'POINT')}"></span>/g
             </span>
           </div>
 
@@ -120,12 +147,13 @@
           <div class="cost-row" style="background:white;border-radius:8px;padding:0.8rem;">
             <span class="cost-label" style="font-size:1rem;font-weight:700;">🏷️ Preço sugerido de venda:</span>
             <span class="cost-recommended cost-value">
-              R$ <span th:text="${#numbers.formatDecimal(recipe.recommendedPrice,1,'COMMA',2,'POINT')}"></span>
+              R$ <span th:text="${#numbers.formatDecimal(recommendedSalePrice,1,'COMMA',2,'POINT')}"></span>
             </span>
           </div>
 
           <p style="font-size:0.78rem;color:var(--text-light);margin-top:0.8rem;">
-            * Preço sugerido = custo marginal × 3,0 (markup padrão confeitaria artesanal)
+            Ordem: primeiro o custo dos ingredientes (bruto e +5%), depois o rateio dos gastos mensais por batelada, depois o preço sugerido = custo total de produção × 3,0.
+            <a th:href="@{/admin/gastos-mensais(mes=${referenceMonth})}" style="color:var(--blue-500);">Editar gastos deste mês</a>
           </p>
         </div>
 

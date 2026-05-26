@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Gastos mensais — Admin</title>
+  <link rel="stylesheet" th:href="@{/css/admin.css}"/>
+</head>
+<body>
+<div class="sidebar">
+  <div class="sidebar-logo">🎂 Confeitaria<span>Painel Administrativo</span></div>
+  <nav class="sidebar-nav">
+    <div class="sidebar-section">Geral</div>
+    <a th:href="@{/admin}"><span class="icon">📊</span> Dashboard</a>
+    <a th:href="@{/admin/contatos}"><span class="icon">📬</span> Contatos</a>
+    <a th:href="@{/admin/links-utm}"><span class="icon">🔗</span> Links UTM</a>
+    <div class="sidebar-section">Conteúdo</div>
+    <a th:href="@{/admin/galeria}"><span class="icon">🖼️</span> Galeria</a>
+    <a th:href="@{/admin/depoimentos}"><span class="icon">💬</span> Depoimentos</a>
+    <a th:href="@{/admin/faqs}"><span class="icon">❓</span> FAQs</a>
+    <div class="sidebar-section">Financeiro</div>
+    <a th:href="@{/admin/ingredientes}"><span class="icon">🥚</span> Ingredientes</a>
+    <a th:href="@{/admin/gastos-mensais}" class="active"><span class="icon">📆</span> Gastos mensais</a>
+    <a th:href="@{/admin/receitas}"><span class="icon">📋</span> Receitas</a>
+    <a th:href="@{/admin/financeiro}" th:classappend="${currentPage == 'financeiro'} ? 'active' : ''"><span class="icon">📈</span> Análise financeira</a>
+    <a th:href="@{/admin/vendas}"><span class="icon">💰</span> Vendas</a>
+  </nav>
+  <div class="sidebar-footer"><a th:href="@{/}" target="_blank">🌐 Ver Site</a><br/><br/><a th:href="@{/admin/logout}">🚪 Sair</a></div>
+</div>
+<div class="main-content">
+  <div class="topbar"><div class="topbar-title">📆 Gastos mensais fixos</div><div class="topbar-user">👤 admin</div></div>
+  <div class="page-content">
+
+    <div class="alert alert-info">
+      Cadastre aluguel, energia, água, internet e outros gastos fixos do mês. O total é rateado pelo número estimado de produções mensais (bateladas) para compor o custo por receita junto com os ingredientes.
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:1rem;align-items:center;margin-bottom:1rem;">
+      <a th:href="@{/admin/gastos-mensais(mes=${prevMonth})}" class="btn btn-outline btn-sm">← Mês anterior</a>
+      <strong>Competência: <span th:text="${yearMonth}"></span></strong>
+      <a th:href="@{/admin/gastos-mensais(mes=${nextMonth})}" class="btn btn-outline btn-sm">Próximo mês →</a>
+      <a th:href="@{/admin/gastos-mensais}" class="btn btn-outline btn-sm">Mês atual</a>
+    </div>
+
+    <div class="two-col">
+      <div class="admin-form">
+        <h3 style="margin-bottom:1rem;">⚙️ Produção mensal estimada</h3>
+        <p style="font-size:0.88rem;color:var(--text-mid);margin-bottom:0.8rem;">
+          Quantas receitas completas (bateladas) você espera vender por mês em média? Esse número divide o total de gastos fixos para obter o rateio por unidade.
+        </p>
+        <form th:action="@{/admin/gastos-mensais/settings}" method="post">
+          <input type="hidden" name="mes" th:value="${yearMonth}"/>
+          <div class="form-group">
+            <label>Unidades de produção / mês</label>
+            <input type="number" name="estimatedMonthlyProductionUnits" step="1" min="1"
+                   th:value="${costSettings.estimatedMonthlyProductionUnits}" required/>
+          </div>
+          <button type="submit" class="btn btn-primary">💾 Salvar</button>
+        </form>
+      </div>
+
+      <div class="cost-highlight">
+        <h3 style="margin-bottom:1rem;font-family:'Playfair Display',serif;">Resumo do mês</h3>
+        <div class="cost-row">
+          <span class="cost-label">Total de gastos cadastrados:</span>
+          <span class="cost-value">R$ <span th:text="${#numbers.formatDecimal(monthTotal,1,'COMMA',2,'POINT')}"></span></span>
+        </div>
+        <div class="cost-row">
+          <span class="cost-label">Rateio por batelada:</span>
+          <span class="cost-value" style="color:var(--blue-500);">R$ <span th:text="${#numbers.formatDecimal(fixedPerProductionUnit,1,'COMMA',2,'POINT')}"></span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-form">
+      <h3 style="margin-bottom:1rem;">➕ Novo gasto</h3>
+      <form th:action="@{/admin/gastos-mensais/add}" method="post" th:object="${newExpense}">
+        <input type="hidden" name="yearMonth" th:value="${yearMonth}"/>
+        <div class="form-row">
+          <div class="form-group" style="flex:2;">
+            <label>Descrição</label>
+            <input type="text" name="description" placeholder="Ex: Aluguel da cozinha" required/>
+          </div>
+          <div class="form-group">
+            <label>Valor (R$)</label>
+            <input type="number" name="amount" step="0.01" min="0.01" placeholder="0,00" required/>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Adicionar ao mês</button>
+      </form>
+    </div>
+
+    <div class="table-card">
+      <div class="table-header"><h3>Gastos em <span th:text="${yearMonth}"></span></h3></div>
+      <table>
+        <thead><tr><th>Descrição</th><th>Valor</th><th></th></tr></thead>
+        <tbody>
+          <tr th:each="e : ${expenses}">
+            <td th:text="${e.description}"></td>
+            <td>R$ <span th:text="${#numbers.formatDecimal(e.amount,1,'COMMA',2,'POINT')}"></span></td>
+            <td>
+              <form th:action="@{/admin/gastos-mensais/delete/{id}(id=${e.id})}" method="post" onsubmit="return confirm('Remover este gasto?')">
+                <input type="hidden" name="mes" th:value="${yearMonth}"/>
+                <button type="submit" class="btn btn-danger btn-sm">✕</button>
+              </form>
+            </td>
+          </tr>
+          <tr th:if="${#lists.isEmpty(expenses)}">
+            <td colspan="3" style="text-align:center;color:#9e7a8a;padding:1.5rem;">Nenhum gasto neste mês</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>

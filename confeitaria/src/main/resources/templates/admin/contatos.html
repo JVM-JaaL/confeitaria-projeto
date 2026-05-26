@@ -13,13 +13,16 @@
     <div class="sidebar-section">Geral</div>
     <a th:href="@{/admin}"><span class="icon">📊</span> Dashboard</a>
     <a th:href="@{/admin/contatos}" class="active"><span class="icon">📬</span> Contatos</a>
+    <a th:href="@{/admin/links-utm}"><span class="icon">🔗</span> Links UTM</a>
     <div class="sidebar-section">Conteúdo</div>
     <a th:href="@{/admin/galeria}"><span class="icon">🖼️</span> Galeria</a>
     <a th:href="@{/admin/depoimentos}"><span class="icon">💬</span> Depoimentos</a>
     <a th:href="@{/admin/faqs}"><span class="icon">❓</span> FAQs</a>
     <div class="sidebar-section">Financeiro</div>
     <a th:href="@{/admin/ingredientes}"><span class="icon">🥚</span> Ingredientes</a>
+    <a th:href="@{/admin/gastos-mensais}"><span class="icon">📆</span> Gastos mensais</a>
     <a th:href="@{/admin/receitas}"><span class="icon">📋</span> Receitas</a>
+    <a th:href="@{/admin/financeiro}" th:classappend="${currentPage == 'financeiro'} ? 'active' : ''"><span class="icon">📈</span> Análise financeira</a>
     <a th:href="@{/admin/vendas}"><span class="icon">💰</span> Vendas</a>
   </nav>
   <div class="sidebar-footer">
@@ -45,7 +48,7 @@
     <div class="table-card">
       <div class="table-header"><h3>Todos os Contatos (<span th:text="${#lists.size(contacts)}">0</span>)</h3></div>
       <table>
-        <thead><tr><th>#</th><th>Nome</th><th>E-mail</th><th>WhatsApp</th><th>Origem</th><th>Referral</th><th>Mensagem</th><th>Data</th><th>Ação</th></tr></thead>
+        <thead><tr><th>#</th><th>Nome</th><th>E-mail</th><th>WhatsApp</th><th>Origem</th><th>Referral</th><th>Campanha UTM</th><th>Mensagem</th><th>Data</th><th>Ação</th></tr></thead>
         <tbody>
           <tr th:each="c : ${contacts}">
             <td th:text="${c.id}"></td>
@@ -54,6 +57,11 @@
             <td th:text="${c.phone}"></td>
             <td><span class="badge badge-blue" th:text="${c.source ?: 'site'}"></span></td>
             <td><span class="badge badge-pink" th:if="${c.referralCode}" th:text="${c.referralCode}"></span></td>
+            <td style="font-size:0.78rem;max-width:120px;">
+              <span th:if="${c.utmCampaign}" class="badge badge-blue" th:text="${c.utmCampaign}"></span>
+              <span th:if="${c.utmSource}" style="display:block;color:var(--text-light);" th:text="${c.utmSource}"></span>
+              <span th:unless="${c.utmCampaign != null or c.utmSource != null}">—</span>
+            </td>
             <td style="max-width:250px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" th:text="${c.message}"></td>
             <td style="font-size:0.8rem;" th:text="${#temporals.format(c.createdAt,'dd/MM/yy HH:mm')}"></td>
             <td>

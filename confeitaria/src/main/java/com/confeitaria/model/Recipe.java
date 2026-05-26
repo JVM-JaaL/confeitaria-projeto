@@ -22,21 +22,30 @@ public class Recipe {
     @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RecipeIngredient> ingredients = new ArrayList<>();
 
-    // Calculated: sum of all ingredient costs * 1.05
-    public BigDecimal getCostTotal() {
-        BigDecimal total = ingredients.stream()
-            .map(RecipeIngredient::getTotalCost)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
-        return total.multiply(new BigDecimal("1.05")); // +5% marginal cost
+    /** Soma dos custos dos ingredientes (sem margem). Base para os demais cálculos. */
+    public BigDecimal getIngredientCostRaw() {
+        return ingredients.stream()
+                .map(RecipeIngredient::getTotalCost)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    // Recommended price: cost * 3 (typical confeitaria markup)
+    /** Custo marginal apenas sobre ingredientes (+5% perdas/desperdício). Gastos fixos entram na camada de serviço/UI. */
+    public BigDecimal getMarginalCost() {
+        return getIngredientCostRaw().multiply(new BigDecimal("1.05"));
+    }
+
+    /** Igual ao custo marginal de ingredientes — mantido para compatibilidade com telas que usam "custo total" só de ingredientes. */
+    public BigDecimal getCostTotal() {
+        return getMarginalCost();
+    }
+
+    /** Preço sugerido só com base em ingredientes × 3; na receita detalhada use o valor que inclui rateio mensal quando aplicável. */
     public BigDecimal getRecommendedPrice() {
-        return getCostTotal().multiply(new BigDecimal("3.0"));
+        return getMarginalCost().multiply(new BigDecimal("3.0"));
     }
 
     public BigDecimal getCostPerGram() {
         if (yieldGrams == null || yieldGrams.compareTo(BigDecimal.ZERO) == 0) return BigDecimal.ZERO;
-        return getCostTotal().divide(yieldGrams, 4, java.math.RoundingMode.HALF_UP);
+        return getMarginalCost().divide(yieldGrams, 4, java.math.RoundingMode.HALF_UP);
     }
 }

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head th:replace="~{public/fragments :: publicHead('Galeria — Confeitaria Artesanal')}"></head>
+<body class="public-site d-flex flex-column min-vh-100">
+
+<div th:replace="~{public/fragments :: publicNav}"></div>
+
+<main class="flex-grow-1">
+
+<div th:if="${ref != null and !#strings.isEmpty(ref)}" style="background: linear-gradient(135deg,#fde8f0,#e3f0fb); text-align:center; padding:1rem; font-weight:600; color:#6b4a58;">
+  🎉 Você veio por indicação! Mencione <strong th:text="${ref}"></strong> ao entrar em contato e ganhe condições especiais.
+</div>
+
+<div class="bg-calazans-strip py-5 text-center">
+  <div class="container">
+    <h1 class="display-6 font-serif mb-2">Nossas Criações</h1>
+    <p class="text-muted mb-0">Cada produto é feito com ingredientes selecionados e muito carinho</p>
+  </div>
+</div>
+
+<section class="section">
+  <div class="container">
+    <div class="gallery-grid">
+      <div class="card gallery-item" th:each="item : ${gallery}">
+        <img th:if="${item.imagePath != null}" th:src="${item.imagePath}" th:alt="${item.title}"/>
+        <div th:unless="${item.imagePath != null}" class="gallery-placeholder">🎂</div>
+        <div class="card-body">
+          <h3 style="font-size:1.1rem; margin-bottom:0.3rem;" th:text="${item.title}">Bolo</h3>
+          <p style="color:#9e7a8a; font-size:0.9rem;" th:text="${item.description}">Descrição</p>
+        </div>
+      </div>
+      <div class="card gallery-item" th:if="${#lists.isEmpty(gallery)}">
+        <div class="gallery-placeholder">🎂</div>
+        <div class="card-body">
+          <h3 style="font-size:1.1rem">Bolo de Aniversário</h3>
+          <p style="color:#9e7a8a; font-size:0.9rem">Personalizados para cada ocasião especial</p>
+        </div>
+      </div>
+    </div>
+    <div class="text-center py-4">
+      <a th:href="${marketing.url('/contato')}" class="btn btn-primary btn-lg rounded-pill px-4">✉️ Fazer um pedido</a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<div th:replace="~{public/fragments :: publicFooter}"></div>
+<th:block th:replace="~{public/fragments :: publicScripts}"></th:block>
+</body>
+</html>

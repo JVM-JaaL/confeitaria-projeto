@@ -5,7 +5,6 @@ import com.confeitaria.repository.*;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
-import java.time.LocalDate;
 
 @Component
 public class DataInitializer implements CommandLineRunner {
@@ -14,17 +13,40 @@ public class DataInitializer implements CommandLineRunner {
     private final ReferralLinkRepository referralRepo;
     private final IngredientRepository ingredientRepo;
     private final TestimonialRepository testimonialRepo;
+    private final CostSettingsRepository costSettingsRepo;
+    private final UtmLinkRepository utmLinkRepo;
 
     public DataInitializer(FaqRepository faqRepo, ReferralLinkRepository referralRepo,
-                           IngredientRepository ingredientRepo, TestimonialRepository testimonialRepo) {
+                           IngredientRepository ingredientRepo, TestimonialRepository testimonialRepo,
+                           CostSettingsRepository costSettingsRepo, UtmLinkRepository utmLinkRepo) {
         this.faqRepo = faqRepo;
         this.referralRepo = referralRepo;
         this.ingredientRepo = ingredientRepo;
         this.testimonialRepo = testimonialRepo;
+        this.costSettingsRepo = costSettingsRepo;
+        this.utmLinkRepo = utmLinkRepo;
     }
 
     @Override
     public void run(String... args) {
+        if (!costSettingsRepo.existsById(CostSettings.SINGLETON_ID)) {
+            var cs = new CostSettings();
+            cs.setId(CostSettings.SINGLETON_ID);
+            cs.setEstimatedMonthlyProductionUnits(new BigDecimal("100"));
+            costSettingsRepo.save(cs);
+        }
+
+        if (utmLinkRepo.count() == 0) {
+            var utm = new UtmLink();
+            utm.setName("Exemplo: Instagram → Contato");
+            utm.setBaseUrl("http://localhost:8080/contato");
+            utm.setUtmSource("instagram");
+            utm.setUtmMedium("social");
+            utm.setUtmCampaign("doces_2026");
+            utm.setShortDescription("Ajuste a URL base ao publicar em produção.");
+            utmLinkRepo.save(utm);
+        }
+
         // Sample FAQs
         if (faqRepo.count() == 0) {
             addFaq("Como faço um pedido?", "Entre em contato pelo formulário ou WhatsApp. Respondemos em até 24h para alinhar os detalhes do seu pedido.", 1);

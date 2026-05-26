@@ -1,0 +1,112 @@
+package com.confeitaria.controller;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.confeitaria.repository.SaleRepository;
+import com.confeitaria.service.FinanceAnalyticsService;
+import com.confeitaria.service.FinanceAnalyticsService.DailyPoint;
+import com.confeitaria.service.FinanceAnalyticsService.ProductMetric;
+import com.confeitaria.service.FinanceAnalyticsService.ProductMonthPoint;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+@Controller
+@RequestMapping("/admin")
+public class FinancialDashboardController {
+
+    private final FinanceAnalyticsService financeAnalyticsService;
+    private final SaleRepository saleRepo;
+    private final ObjectMapper objectMapper;
+
+    public FinancialDashboardController(FinanceAnalyticsService financeAnalyticsService,
+                                        SaleRepository saleRepo,
+                                        ObjectMapper objectMapper) {
+        this.financeAnalyticsService = financeAnalyticsService;
+        this.saleRepo = saleRepo;
+        this.objectMapper = objectMapper;
+    }
+
+    @GetMapping("/financeiro")
+    public String financeiro(Model model,
+                             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
+                             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fim,
+                             @RequestParam(required = false) String produto,
+                             @RequestParam(required = false) String grupo) throws JsonProcessingException {
+        if (inicio == null) {
+            inicio = LocalDate.now().withDayOfMonth(1);
+        }
+        if (fim == null) {
+            fim = LocalDate.now();
+        }
+
+        var report = financeAnalyticsService.buildReport(inicio, fim, produto, grupo);
+
+        Set<String> grupos = saleRepo.findAllByOrderBySaleDateDesc().stream()
+                .map(s -> s.getProductGroup())
+                .filter(Objects::nonNull)
+                .filter(g -> !g.isBlank())
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+
+        List<Map<String, Object>> dailyRows = report.getDailyPoints().stream().map(this::dailyRow).toList();
+        List<Map<String, Object>> productRows = report.getProductMetrics().stream().map(this::productRow).toList();
+        List<Map<String, Object>> pmRows = report.getProductMonthPoints().stream().map(this::productMonthRow).toList();
+
+        model.addAttribute("dailyJson", objectMapper.writeValueAsString(dailyRows));
+        model.addAttribute("productJson", objectMapper.writeValueAsString(productRows));
+        model.addAttribute("productMonthJson", objectMapper.writeValueAsString(pmRows));
+
+        model.addAttribute("currentPage", "financeiro");
+        model.addAttribute("pageTitle", "Análise financeira");
+        model.addAttribute("report", report);
+        model.addAttribute("inicio", inicio);
+        model.addAttribute("fim", fim);
+        model.addAttribute("produto", produto != null ? produto : "");
+        model.addAttribute("grupo", grupo != null ? grupo : "");
+        model.addAttribute("productGroups", grupos);
+        return "admin/financeiro";
+    }
+
+    private Map<String, Object> dailyRow(DailyPoint d) {
+        Map<String, Object> m = new HashMap<>();
+        m.put("date", d.getDate().toString());
+        m.put("revenue", d.getRevenue());
+        m.put("cost", d.getCost());
+        m.put("profit", d.getProfit());
+        return m;
+    }
+
+    private Map<String, Object> productRow(ProductMetric p) {
+        Map<String, Object> m = new HashMap<>();
+        m.put("name", p.getProductName());
+        m.put("group", p.getProductGroup());
+        m.put("revenue", p.getRevenue());
+        m.put("cost", p.getCost());
+        m.put("profit", p.getProfit());
+        m.put("quantity", p.getQuantity());
+        m.put("marginPercent", p.getMarginPercent());
+        return m;
+    }
+
+    private Map<String, Object> productMonthRow(ProductMonthPoint p) {
+        Map<String, Object> m = new HashMap<>();
+        m.put("label", p.getLabel());
+        m.put("revenue", p.getRevenue());
+        m.put("cost", p.getCost());
+        m.put("profit", p.getProfit());
+        m.put("quantity", p.getQuantity());
+        return m;
+    }
+}

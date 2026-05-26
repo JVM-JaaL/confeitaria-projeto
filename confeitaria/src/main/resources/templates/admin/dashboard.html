@@ -15,6 +15,7 @@
     <div class="sidebar-section">Geral</div>
     <a th:href="@{/admin}" th:classappend="${currentPage == 'dashboard'} ? 'active' : ''"><span class="icon">📊</span> Dashboard</a>
     <a th:href="@{/admin/contatos}" th:classappend="${currentPage == 'contatos'} ? 'active' : ''"><span class="icon">📬</span> Contatos</a>
+    <a th:href="@{/admin/links-utm}" th:classappend="${currentPage == 'links-utm'} ? 'active' : ''"><span class="icon">🔗</span> Links UTM</a>
 
     <div class="sidebar-section">Conteúdo</div>
     <a th:href="@{/admin/galeria}" th:classappend="${currentPage == 'galeria'} ? 'active' : ''"><span class="icon">🖼️</span> Galeria</a>
@@ -23,7 +24,9 @@
 
     <div class="sidebar-section">Financeiro</div>
     <a th:href="@{/admin/ingredientes}" th:classappend="${currentPage == 'ingredientes'} ? 'active' : ''"><span class="icon">🥚</span> Ingredientes</a>
+    <a th:href="@{/admin/gastos-mensais}" th:classappend="${currentPage == 'gastos-mensais'} ? 'active' : ''"><span class="icon">📆</span> Gastos mensais</a>
     <a th:href="@{/admin/receitas}" th:classappend="${currentPage == 'receitas'} ? 'active' : ''"><span class="icon">📋</span> Receitas</a>
+    <a th:href="@{/admin/financeiro}" th:classappend="${currentPage == 'financeiro'} ? 'active' : ''"><span class="icon">📈</span> Análise financeira</a>
     <a th:href="@{/admin/vendas}" th:classappend="${currentPage == 'vendas'} ? 'active' : ''"><span class="icon">💰</span> Vendas</a>
   </nav>
   <div class="sidebar-footer">
@@ -69,6 +72,17 @@
         <div>
           <div class="stat-value" th:text="${#lists.size(referralLinks)}">0</div>
           <div class="stat-label">Links de Indicação</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats-grid" style="margin-bottom:1.5rem;">
+      <div class="stat-card" style="grid-column: span 2;">
+        <div class="stat-icon gold">🔗</div>
+        <div>
+          <div class="stat-label">Campanhas e links rastreados</div>
+          <p style="margin:0.5rem 0 0;font-size:0.9rem;color:var(--text-mid);">Crie URLs com utm_source, utm_medium e utm_campaign para medir origem dos pedidos (como no sistema de referência).</p>
+          <a th:href="@{/admin/links-utm}" class="btn btn-primary btn-sm" style="margin-top:0.75rem;">Gerenciar Links UTM</a>
         </div>
       </div>
     </div>

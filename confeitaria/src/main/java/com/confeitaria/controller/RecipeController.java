@@ -5,7 +5,10 @@ import com.confeitaria.repository.*;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,12 +19,18 @@ public class RecipeController {
     private final RecipeRepository recipeRepo;
     private final IngredientRepository ingredientRepo;
     private final RecipeIngredientRepository recipeIngredientRepo;
+    private final MonthlyExpenseRepository monthlyExpenseRepo;
+    private final CostSettingsRepository costSettingsRepo;
 
     public RecipeController(RecipeRepository recipeRepo, IngredientRepository ingredientRepo,
-                            RecipeIngredientRepository recipeIngredientRepo) {
+                            RecipeIngredientRepository recipeIngredientRepo,
+                            MonthlyExpenseRepository monthlyExpenseRepo,
+                            CostSettingsRepository costSettingsRepo) {
         this.recipeRepo = recipeRepo;
         this.ingredientRepo = ingredientRepo;
         this.recipeIngredientRepo = recipeIngredientRepo;
+        this.monthlyExpenseRepo = monthlyExpenseRepo;
+        this.costSettingsRepo = costSettingsRepo;
     }
 
     // ---- INGREDIENTS ----
@@ -56,18 +65,77 @@ public class RecipeController {
     // ---- RECIPES ----
     @GetMapping("/receitas")
     public String receitas(Model model) {
+        YearMonth ym = YearMonth.now();
+        BigDecimal fixedPerUnit = computeFixedAllocationPerUnit(ym.toString());
         model.addAttribute("recipes", recipeRepo.findAllByOrderByNameAsc());
         model.addAttribute("ingredients", ingredientRepo.findAllByOrderByNameAsc());
         model.addAttribute("newRecipe", new Recipe());
+        model.addAttribute("fixedAllocationPerUnit", fixedPerUnit);
+        model.addAttribute("costReferenceMonth", ym.toString());
         return "admin/receitas";
     }
 
     @GetMapping("/receitas/{id}")
-    public String recipeDetail(@PathVariable Long id, Model model) {
+    public String recipeDetail(@PathVariable Long id,
+                               @RequestParam(required = false) String mes,
+                               Model model) {
+        YearMonth ym = parseYearMonth(mes);
+        String ymStr = ym.toString();
         var recipe = recipeRepo.findById(id).orElseThrow();
+
+        BigDecimal monthlyFixed = monthlyExpenseRepo.sumAmountByYearMonth(ymStr);
+        CostSettings settings = costSettingsRepo.findById(CostSettings.SINGLETON_ID).orElse(null);
+        BigDecimal units = settings != null ? settings.getEstimatedMonthlyProductionUnits() : BigDecimal.ZERO;
+        BigDecimal fixedPerUnit = BigDecimal.ZERO;
+        if (units != null && units.compareTo(BigDecimal.ZERO) > 0) {
+            fixedPerUnit = monthlyFixed.divide(units, 4, RoundingMode.HALF_UP);
+        }
+
+        BigDecimal marginal = recipe.getMarginalCost();
+        BigDecimal fullProductionCost = marginal.add(fixedPerUnit);
+        BigDecimal recommendedSalePrice = fullProductionCost.multiply(new BigDecimal("3.0"));
+
+        BigDecimal costPerGramFull = BigDecimal.ZERO;
+        if (recipe.getYieldGrams() != null && recipe.getYieldGrams().compareTo(BigDecimal.ZERO) > 0) {
+            costPerGramFull = fullProductionCost.divide(recipe.getYieldGrams(), 4, RoundingMode.HALF_UP);
+        }
+
         model.addAttribute("recipe", recipe);
         model.addAttribute("allIngredients", ingredientRepo.findAllByOrderByNameAsc());
+        model.addAttribute("referenceMonth", ymStr);
+        model.addAttribute("prevMonth", ym.minusMonths(1).toString());
+        model.addAttribute("nextMonth", ym.plusMonths(1).toString());
+        model.addAttribute("monthlyFixedTotal", monthlyFixed);
+        model.addAttribute("estimatedMonthlyUnits", units);
+        model.addAttribute("fixedAllocationPerUnit", fixedPerUnit);
+        model.addAttribute("fullProductionCost", fullProductionCost);
+        model.addAttribute("recommendedSalePrice", recommendedSalePrice);
+        model.addAttribute("costPerGramProduction", costPerGramFull);
         return "admin/receita-detalhe";
+    }
+
+    private BigDecimal computeFixedAllocationPerUnit(String yearMonth) {
+        BigDecimal monthlyFixed = monthlyExpenseRepo.sumAmountByYearMonth(yearMonth);
+        CostSettings settings = costSettingsRepo.findById(CostSettings.SINGLETON_ID).orElse(null);
+        if (settings == null || settings.getEstimatedMonthlyProductionUnits() == null) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal units = settings.getEstimatedMonthlyProductionUnits();
+        if (units.compareTo(BigDecimal.ZERO) <= 0) {
+            return BigDecimal.ZERO;
+        }
+        return monthlyFixed.divide(units, 4, RoundingMode.HALF_UP);
+    }
+
+    private static YearMonth parseYearMonth(String mes) {
+        if (mes == null || mes.isBlank()) {
+            return YearMonth.now();
+        }
+        try {
+            return YearMonth.parse(mes);
+        } catch (Exception e) {
+            return YearMonth.now();
+        }
     }
 
     @PostMapping("/receitas/add")

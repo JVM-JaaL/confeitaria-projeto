@@ -17,5 +17,12 @@ public class Contact {
     private String message;
     private String referralCode;
     private String source; // how they found: instagram, referral, google, etc
+
+    private String utmSource;
+    private String utmMedium;
+    private String utmCampaign;
+    private String utmTerm;
+    private String utmContent;
+
     private LocalDateTime createdAt = LocalDateTime.now();
 }

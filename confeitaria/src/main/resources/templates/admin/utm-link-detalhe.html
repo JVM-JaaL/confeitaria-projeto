@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>URL gerada — UTM</title>
+  <link rel="stylesheet" th:href="@{/css/admin.css}"/>
+</head>
+<body>
+<div class="sidebar">
+  <div class="sidebar-logo">🎂 Confeitaria<span>Painel Administrativo</span></div>
+  <nav class="sidebar-nav">
+    <div class="sidebar-section">Geral</div>
+    <a th:href="@{/admin}"><span class="icon">📊</span> Dashboard</a>
+    <a th:href="@{/admin/contatos}"><span class="icon">📬</span> Contatos</a>
+    <a th:href="@{/admin/links-utm}" class="active"><span class="icon">🔗</span> Links UTM</a>
+    <div class="sidebar-section">Conteúdo</div>
+    <a th:href="@{/admin/galeria}"><span class="icon">🖼️</span> Galeria</a>
+    <a th:href="@{/admin/depoimentos}"><span class="icon">💬</span> Depoimentos</a>
+    <a th:href="@{/admin/faqs}"><span class="icon">❓</span> FAQs</a>
+    <div class="sidebar-section">Financeiro</div>
+    <a th:href="@{/admin/ingredientes}"><span class="icon">🥚</span> Ingredientes</a>
+    <a th:href="@{/admin/gastos-mensais}"><span class="icon">📆</span> Gastos mensais</a>
+    <a th:href="@{/admin/receitas}"><span class="icon">📋</span> Receitas</a>
+    <a th:href="@{/admin/financeiro}" th:classappend="${currentPage == 'financeiro'} ? 'active' : ''"><span class="icon">📈</span> Análise financeira</a>
+    <a th:href="@{/admin/vendas}"><span class="icon">💰</span> Vendas</a>
+  </nav>
+  <div class="sidebar-footer"><a th:href="@{/}" target="_blank">🌐 Ver Site</a><br/><br/><a th:href="@{/admin/logout}">🚪 Sair</a></div>
+</div>
+<div class="main-content">
+  <div class="topbar"><div class="topbar-title">URL com UTM</div><div class="topbar-user">👤 admin</div></div>
+  <div class="page-content">
+
+    <div class="cost-highlight">
+      <p><strong th:text="${utmLink.name}"></strong></p>
+      <p th:if="${utmLink.shortDescription}" style="color:var(--text-mid);font-size:0.9rem;" th:text="${utmLink.shortDescription}"></p>
+      <hr style="margin:1rem 0;border:none;border-top:1px solid rgba(200,120,150,0.2);"/>
+      <label style="font-size:0.85rem;">Copie o link:</label>
+      <div id="utmFullUrl" style="word-break:break-all;background:white;padding:0.75rem;border-radius:8px;margin-top:0.5rem;font-family:monospace;font-size:0.85rem;" th:text="${fullUrl}"></div>
+      <button type="button" class="btn btn-primary btn-sm" style="margin-top:1rem;" onclick="navigator.clipboard.writeText(document.getElementById('utmFullUrl').textContent.trim())">📋 Copiar</button>
+    </div>
+
+    <p style="margin-top:1rem;"><a th:href="@{/admin/links-utm}" class="btn btn-outline">← Voltar</a></p>
+  </div>
+</div>
+</body>
+</html>

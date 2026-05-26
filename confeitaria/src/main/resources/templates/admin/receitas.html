@@ -12,13 +12,16 @@
     <div class="sidebar-section">Geral</div>
     <a th:href="@{/admin}"><span class="icon">📊</span> Dashboard</a>
     <a th:href="@{/admin/contatos}"><span class="icon">📬</span> Contatos</a>
+    <a th:href="@{/admin/links-utm}"><span class="icon">🔗</span> Links UTM</a>
     <div class="sidebar-section">Conteúdo</div>
     <a th:href="@{/admin/galeria}"><span class="icon">🖼️</span> Galeria</a>
     <a th:href="@{/admin/depoimentos}"><span class="icon">💬</span> Depoimentos</a>
     <a th:href="@{/admin/faqs}"><span class="icon">❓</span> FAQs</a>
     <div class="sidebar-section">Financeiro</div>
     <a th:href="@{/admin/ingredientes}"><span class="icon">🥚</span> Ingredientes</a>
+    <a th:href="@{/admin/gastos-mensais}"><span class="icon">📆</span> Gastos mensais</a>
     <a th:href="@{/admin/receitas}" class="active"><span class="icon">📋</span> Receitas</a>
+    <a th:href="@{/admin/financeiro}" th:classappend="${currentPage == 'financeiro'} ? 'active' : ''"><span class="icon">📈</span> Análise financeira</a>
     <a th:href="@{/admin/vendas}"><span class="icon">💰</span> Vendas</a>
   </nav>
   <div class="sidebar-footer"><a th:href="@{/}" target="_blank">🌐 Ver Site</a><br/><br/><a th:href="@{/admin/logout}">🚪 Sair</a></div>
@@ -28,7 +31,7 @@
   <div class="page-content">
 
     <div class="alert alert-info">
-      💡 Crie a receita aqui e depois clique em "Ver Detalhes" para adicionar os ingredientes e ver o cálculo de custo automático.
+      💡 Crie a receita aqui e depois use "Ver Detalhes" para os ingredientes e o custo completo (ingredientes primeiro, depois rateio de <a th:href="@{/admin/gastos-mensais(mes=${costReferenceMonth})}">gastos mensais</a>).
     </div>
 
     <div class="admin-form">
@@ -72,20 +75,22 @@
     <div class="table-card">
       <div class="table-header"><h3>Receitas Cadastradas</h3></div>
       <table>
-        <thead><tr><th>Nome</th><th>Categoria</th><th>Rendimento</th><th>Custo Total</th><th>Preço Sugerido</th><th>Ações</th></tr></thead>
+        <thead><tr><th>Nome</th><th>Categoria</th><th>Rendimento</th><th>Custo produção</th><th>Preço sugerido</th><th>Ações</th></tr></thead>
         <tbody>
-          <tr th:each="r : ${recipes}">
+          <tr th:each="r : ${recipes}"
+              th:with="prodCost=${r.marginalCost.add(fixedAllocationPerUnit)},
+                       salePrice=${r.marginalCost.add(fixedAllocationPerUnit).multiply(T(java.math.BigDecimal).valueOf(3))}">
             <td><strong th:text="${r.name}"></strong></td>
             <td><span class="badge badge-pink" th:text="${r.category}"></span></td>
             <td th:text="${r.yieldDescription ?: (r.yieldGrams != null ? r.yieldGrams + 'g' : '-')}"></td>
             <td>
               <span class="badge badge-blue">
-                R$ <span th:text="${#numbers.formatDecimal(r.costTotal, 1, 'COMMA', 2, 'POINT')}"></span>
+                R$ <span th:text="${#numbers.formatDecimal(prodCost, 1, 'COMMA', 2, 'POINT')}"></span>
               </span>
             </td>
             <td>
               <span class="badge badge-green" style="font-size:0.9rem;">
-                R$ <span th:text="${#numbers.formatDecimal(r.recommendedPrice, 1, 'COMMA', 2, 'POINT')}"></span>
+                R$ <span th:text="${#numbers.formatDecimal(salePrice, 1, 'COMMA', 2, 'POINT')}"></span>
               </span>
             </td>
             <td style="display:flex;gap:0.5rem;">

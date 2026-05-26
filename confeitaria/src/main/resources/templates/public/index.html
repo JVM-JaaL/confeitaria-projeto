@@ -1,152 +1,82 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
-<head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Confeitaria Artesanal — Feito com Amor</title>
-  <link rel="stylesheet" th:href="@{/css/style.css}"/>
-</head>
-<body>
+<head th:replace="~{public/fragments :: publicHead('Confeitaria Artesanal — Início')}"></head>
+<body class="public-site d-flex flex-column min-vh-100">
 
-<nav>
-  <div class="nav-inner">
-    <div class="nav-logo">🎂 Confeitaria</div>
-    <div class="nav-links">
-      <a href="#galeria">Galeria</a>
-      <a href="#depoimentos">Depoimentos</a>
-      <a th:href="@{/faq}">FAQ</a>
-      <a th:href="@{/contato}" class="btn btn-primary btn-sm" style="margin-left:1.5rem">Fazer Pedido</a>
-    </div>
-  </div>
-</nav>
+<div th:replace="~{public/fragments :: publicNav}"></div>
+
+<main class="flex-grow-1">
 
 <!-- HERO -->
 <section class="hero">
   <div class="hero-content">
     <h1>Doces feitos com <span>amor</span> e dedicação</h1>
     <p>Bolos decorados, doces finos e sobremesas artesanais preparados sob encomenda para tornar seus momentos ainda mais especiais.</p>
-    <a th:href="@{/contato(ref=${ref})}" class="btn btn-primary" style="margin-right:1rem">✉️ Fazer Pedido</a>
-    <a href="#galeria" class="btn btn-secondary">Ver Criações</a>
+    <a th:href="${marketing.url('/contato')}" class="btn btn-primary me-2 mb-2 mb-md-0">✉️ Fazer Pedido</a>
+    <a th:href="${marketing.url('/galeria')}" class="btn btn-secondary">Ver Galeria</a>
   </div>
 </section>
 
 <!-- REFERRAL BANNER -->
-<div th:if="${ref != null}" style="background: linear-gradient(135deg,#fde8f0,#e3f0fb); text-align:center; padding:1rem; font-weight:600; color:#6b4a58;">
+<div th:if="${ref != null and !#strings.isEmpty(ref)}" style="background: linear-gradient(135deg,#fde8f0,#e3f0fb); text-align:center; padding:1rem; font-weight:600; color:#6b4a58;">
   🎉 Você veio por indicação! Mencione <strong th:text="${ref}"></strong> ao entrar em contato e ganhe condições especiais.
 </div>
 
-<!-- GALLERY SECTION -->
-<section class="section" id="galeria">
-  <div class="section-title">
-    <h2>Nossas Criações</h2>
-    <div class="section-divider"></div>
-    <p>Cada produto é feito com ingredientes selecionados e muito carinho</p>
-  </div>
-  <div class="gallery-grid">
-    <div class="card gallery-item" th:each="item : ${gallery}">
-      <img th:if="${item.imagePath != null}" th:src="${item.imagePath}" th:alt="${item.title}"/>
-      <div th:unless="${item.imagePath != null}" class="gallery-placeholder">🎂</div>
-      <div class="card-body">
-        <h3 style="font-size:1.1rem; margin-bottom:0.3rem;" th:text="${item.title}">Bolo</h3>
-        <p style="color:#9e7a8a; font-size:0.9rem;" th:text="${item.description}">Descrição</p>
-      </div>
-    </div>
-    <div class="card gallery-item" th:if="${#lists.isEmpty(gallery)}">
-      <div class="gallery-placeholder">🎂</div>
-      <div class="card-body">
-        <h3 style="font-size:1.1rem">Bolo de Aniversário</h3>
-        <p style="color:#9e7a8a; font-size:0.9rem">Personalizados para cada ocasião especial</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- TESTIMONIALS -->
-<section style="background: linear-gradient(135deg,var(--pink-100),var(--blue-100)); padding:4rem 2rem;" id="depoimentos">
-  <div style="max-width:1100px; margin:0 auto;">
+<!-- TEASERS -->
+<section class="section">
+  <div class="container">
     <div class="section-title">
-      <h2>O que nossos clientes dizem</h2>
+      <h2>Explore</h2>
       <div class="section-divider"></div>
+      <p>Cada seção tem sua própria página.</p>
     </div>
-    <div class="testimonials-grid">
-      <div class="testimonial-card" th:each="t : ${testimonials}">
-        <p class="testimonial-text" th:text="${t.text}"></p>
-        <div>
-          <span class="stars" th:text="${'★'.repeat(t.rating) + '☆'.repeat(5 - t.rating)}"></span>
-          <div class="testimonial-author" th:text="${t.clientName}"></div>
-        </div>
+    <div class="row g-4">
+      <div class="col-md-6 col-xl-3">
+        <a th:href="${marketing.url('/galeria')}" class="card h-100 text-decoration-none text-reset shadow-sm border-0" style="border-radius:var(--radius);transition:transform .2s;">
+          <div class="card-body p-4">
+            <div style="font-size:2rem;">🖼️</div>
+            <h3 class="h5 mt-2">Galeria</h3>
+            <p class="small text-muted mb-0">Fotos dos bolos e doces que já produzimos</p>
+          </div>
+        </a>
       </div>
+      <div class="col-md-6 col-xl-3">
+        <a th:href="${marketing.url('/depoimentos')}" class="card h-100 text-decoration-none text-reset shadow-sm border-0" style="border-radius:var(--radius);">
+          <div class="card-body p-4">
+            <div style="font-size:2rem;">💬</div>
+            <h3 class="h5 mt-2">Depoimentos</h3>
+            <p class="small text-muted mb-0">O que clientes dizem sobre nossos doces</p>
+          </div>
+        </a>
+      </div>
+      <div class="col-md-6 col-xl-3">
+        <a th:href="${marketing.url('/perguntas-frequentes')}" class="card h-100 text-decoration-none text-reset shadow-sm border-0" style="border-radius:var(--radius);">
+          <div class="card-body p-4">
+            <div style="font-size:2rem;">❓</div>
+            <h3 class="h5 mt-2">Perguntas frequentes</h3>
+            <p class="small text-muted mb-0">Prazos, entregas e como encomendar</p>
+          </div>
+        </a>
+      </div>
+      <div class="col-md-6 col-xl-3">
+        <a th:href="${marketing.url('/contato')}" class="card h-100 text-decoration-none text-reset shadow-sm border-2" style="border-radius:var(--radius);border-color:var(--pink-200) !important;">
+          <div class="card-body p-4">
+            <div style="font-size:2rem;">✉️</div>
+            <h3 class="h5 mt-2">Contato / Pedido</h3>
+            <p class="small text-muted mb-0">Envie sua ideia e montamos o pedido juntos</p>
+          </div>
+        </a>
+      </div>
+    </div>
+    <div th:if="${marketing.hasAnyUtm()}" class="alert alert-info mt-4 small mb-0">
+      <i class="fas fa-chart-line me-1"></i> Campanha UTM ativa nesta visita: você pode navegar pelo site; os parâmetros serão mantidos até enviar o formulário de contato.
     </div>
   </div>
 </section>
 
-<!-- CONTACT SECTION -->
-<section class="section" id="contato">
-  <div class="section-title">
-    <h2>Faça seu Pedido</h2>
-    <div class="section-divider"></div>
-    <p>Conte-nos o que você está imaginando e vamos criar juntos!</p>
-  </div>
-  <div class="form-card">
-    <form th:action="@{/contato}" th:object="${contact}" method="post">
-      <input type="hidden" name="ref" th:value="${ref}"/>
-      <input type="hidden" name="source" value="landing-page"/>
-      <div class="form-group">
-        <label>Nome *</label>
-        <input type="text" th:field="*{name}" placeholder="Seu nome completo" required/>
-      </div>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
-        <div class="form-group">
-          <label>E-mail *</label>
-          <input type="email" th:field="*{email}" placeholder="seu@email.com" required/>
-        </div>
-        <div class="form-group">
-          <label>WhatsApp</label>
-          <input type="tel" th:field="*{phone}" placeholder="(11) 99999-9999"/>
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Como nos encontrou?</label>
-        <select name="source">
-          <option value="landing-page">Site</option>
-          <option value="instagram">Instagram</option>
-          <option value="indicacao">Indicação</option>
-          <option value="google">Google</option>
-          <option value="outro">Outro</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Sua mensagem / pedido *</label>
-        <textarea th:field="*{message}" placeholder="Descreva o que você deseja: tipo de bolo, sabor, quantidade, data do evento..." required></textarea>
-      </div>
-      <button type="submit" class="btn btn-primary" style="width:100%; padding:1rem; font-size:1rem;">✉️ Enviar Mensagem</button>
-    </form>
-  </div>
-</section>
+</main>
 
-<!-- FOOTER -->
-<footer>
-  <p>🎂 Confeitaria Artesanal — Feito com amor, entregue com carinho</p>
-  <p style="margin-top:0.5rem; font-size:0.8rem;">
-    <a th:href="@{/faq}">FAQ</a> · <a th:href="@{/contato}">Contato</a> · <a th:href="@{/admin}">Admin</a>
-  </p>
-</footer>
-
-<script>
-  // FAQ accordion
-  document.querySelectorAll('.faq-question').forEach(q => {
-    q.addEventListener('click', () => {
-      q.parentElement.classList.toggle('open');
-    });
-  });
-
-  // Smooth scroll
-  document.querySelectorAll('a[href^="#"]').forEach(a => {
-    a.addEventListener('click', e => {
-      e.preventDefault();
-      document.querySelector(a.getAttribute('href'))?.scrollIntoView({behavior: 'smooth'});
-    });
-  });
-</script>
+<div th:replace="~{public/fragments :: publicFooter}"></div>
+<th:block th:replace="~{public/fragments :: publicScripts}"></th:block>
 </body>
 </html>

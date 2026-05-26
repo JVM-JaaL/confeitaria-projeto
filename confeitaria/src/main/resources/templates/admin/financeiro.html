@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Análise financeira — Admin</title>
+  <link rel="stylesheet" th:href="@{/css/admin.css}"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div class="sidebar">
+  <div class="sidebar-logo">🎂 Confeitaria<span>Painel Administrativo</span></div>
+  <nav class="sidebar-nav">
+    <div class="sidebar-section">Geral</div>
+    <a th:href="@{/admin}"><span class="icon">📊</span> Dashboard</a>
+    <a th:href="@{/admin/contatos}"><span class="icon">📬</span> Contatos</a>
+    <a th:href="@{/admin/links-utm}"><span class="icon">🔗</span> Links UTM</a>
+    <div class="sidebar-section">Conteúdo</div>
+    <a th:href="@{/admin/galeria}"><span class="icon">🖼️</span> Galeria</a>
+    <a th:href="@{/admin/depoimentos}"><span class="icon">💬</span> Depoimentos</a>
+    <a th:href="@{/admin/faqs}"><span class="icon">❓</span> FAQs</a>
+    <div class="sidebar-section">Financeiro</div>
+    <a th:href="@{/admin/ingredientes}"><span class="icon">🥚</span> Ingredientes</a>
+    <a th:href="@{/admin/gastos-mensais}"><span class="icon">📆</span> Gastos mensais</a>
+    <a th:href="@{/admin/receitas}"><span class="icon">📋</span> Receitas</a>
+    <a th:href="@{/admin/financeiro}" class="active"><span class="icon">📈</span> Análise financeira</a>
+    <a th:href="@{/admin/vendas}"><span class="icon">💰</span> Vendas</a>
+  </nav>
+  <div class="sidebar-footer"><a th:href="@{/}" target="_blank">🌐 Ver Site</a><br/><br/><a th:href="@{/admin/logout}">🚪 Sair</a></div>
+</div>
+
+<div class="main-content">
+  <div class="topbar"><div class="topbar-title">📈 Análise financeira</div><div class="topbar-user">👤 admin</div></div>
+  <div class="page-content">
+
+    <div class="alert alert-info">
+      Os números vêm das <strong>vendas cadastradas</strong> (custo, receita, quantidade e data). Use os filtros para comparar períodos, produtos ou grupos. O gráfico principal pode ser alternado entre <em>dia</em>, <em>produto</em> e <em>produto + mês</em>.
+    </div>
+
+    <div class="period-filter">
+      <strong>🔎 Filtros</strong>
+      <form th:action="@{/admin/financeiro}" method="get" style="display:flex;align-items:flex-end;gap:1rem;flex-wrap:wrap;margin-top:0.75rem;">
+        <label>De<br/><input type="date" name="inicio" th:value="${inicio}"/></label>
+        <label>Até<br/><input type="date" name="fim" th:value="${fim}"/></label>
+        <label>Produto (contém)<br/><input type="text" name="produto" th:value="${produto}" placeholder="Ex: bolo" style="min-width:160px;"/></label>
+        <label>Grupo<br/>
+          <select name="grupo" style="min-width:140px;">
+            <option value="">Todos</option>
+            <option th:each="g : ${productGroups}" th:value="${g}" th:text="${g}" th:selected="${g == grupo}"></option>
+          </select>
+        </label>
+        <button type="submit" class="btn btn-primary btn-sm">Aplicar</button>
+        <a th:href="@{/admin/financeiro}" class="btn btn-outline btn-sm">Limpar</a>
+      </form>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon green">💵</div>
+        <div>
+          <div class="stat-value" style="font-size:1.35rem;">R$ <span th:text="${#numbers.formatDecimal(report.totalRevenue,1,'COMMA',2,'POINT')}"></span></div>
+          <div class="stat-label">Receita (período filtrado)</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon blue">📦</div>
+        <div>
+          <div class="stat-value" style="font-size:1.35rem;">R$ <span th:text="${#numbers.formatDecimal(report.totalCost,1,'COMMA',2,'POINT')}"></span></div>
+          <div class="stat-label">Custo total</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon pink">📈</div>
+        <div>
+          <div class="stat-value" th:style="|font-size:1.35rem;${report.totalProfit.compareTo(T(java.math.BigDecimal).ZERO) >= 0 ? 'color:#059669' : 'color:#dc2626'}|">
+            R$ <span th:text="${#numbers.formatDecimal(report.totalProfit,1,'COMMA',2,'POINT')}"></span>
+          </div>
+          <div class="stat-label">Lucro</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon gold">%</div>
+        <div>
+          <div class="stat-value" style="font-size:1.35rem;" th:text="${#numbers.formatDecimal(report.marginPercent,1,'COMMA',1,'POINT')} + '%'"></div>
+          <div class="stat-label">Margem sobre receita</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon blue">🧾</div>
+        <div>
+          <div class="stat-value" th:text="${report.saleCount}">0</div>
+          <div class="stat-label">Vendas no filtro</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon pink">#</div>
+        <div>
+          <div class="stat-value" th:text="${#numbers.formatDecimal(report.totalQuantity,1,'COMMA',1,'POINT')}">0</div>
+          <div class="stat-label">Unidades vendidas (Σ qtd)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-card" style="margin-bottom:1.5rem;">
+      <div style="display:flex;flex-wrap:wrap;gap:1rem;align-items:flex-end;justify-content:space-between;">
+        <h3 style="margin:0;">Gráfico principal</h3>
+        <div style="display:flex;flex-wrap:wrap;gap:0.75rem;align-items:flex-end;">
+          <label style="font-size:0.85rem;">Agrupamento<br/>
+            <select id="finGroupBy" class="btn btn-outline btn-sm" style="height:auto;padding:0.45rem 0.6rem;">
+              <option value="dia">Por dia</option>
+              <option value="produto">Por produto</option>
+              <option value="produto_mes">Produto + mês (rótulo)</option>
+            </select>
+          </label>
+          <label style="font-size:0.85rem;">Métrica<br/>
+            <select id="finMetric" class="btn btn-outline btn-sm" style="height:auto;padding:0.45rem 0.6rem;">
+              <option value="profit">Lucro</option>
+              <option value="revenue">Receita</option>
+              <option value="cost">Custo</option>
+              <option value="quantity">Quantidade</option>
+            </select>
+          </label>
+          <label style="font-size:0.85rem;">Tipo<br/>
+            <select id="finChartType" class="btn btn-outline btn-sm" style="height:auto;padding:0.45rem 0.6rem;">
+              <option value="bar">Barras</option>
+              <option value="line">Linha</option>
+            </select>
+          </label>
+          <label style="font-size:0.85rem;">Máx. barras<br/>
+            <select id="finMaxBars" class="btn btn-outline btn-sm" style="height:auto;padding:0.45rem 0.6rem;">
+              <option value="12">12</option>
+              <option value="20" selected>20</option>
+              <option value="40">40</option>
+            </select>
+          </label>
+          <button type="button" class="btn btn-primary btn-sm" id="finRedraw">Atualizar gráfico</button>
+        </div>
+      </div>
+      <div class="chart-wrapper" style="height:340px;margin-top:1rem;">
+        <canvas id="finMainChart"></canvas>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="table-card">
+        <div class="table-header"><h3>🏆 Melhor desempenho em lucro</h3></div>
+        <table>
+          <thead><tr><th>Produto</th><th>Lucro</th><th>Receita</th><th>Qtd</th></tr></thead>
+          <tbody>
+            <tr th:each="p : ${report.topByProfit}">
+              <td><strong th:text="${p.productName}"></strong></td>
+              <td>R$ <span th:text="${#numbers.formatDecimal(p.profit,1,'COMMA',2,'POINT')}"></span></td>
+              <td>R$ <span th:text="${#numbers.formatDecimal(p.revenue,1,'COMMA',2,'POINT')}"></span></td>
+              <td th:text="${#numbers.formatDecimal(p.quantity,1,'COMMA',1,'POINT')}"></td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(report.topByProfit)}"><td colspan="4" style="text-align:center;color:#9e7a8a;">Sem dados no período</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="table-card">
+        <div class="table-header"><h3>📉 Menor lucro acumulado</h3></div>
+        <table>
+          <thead><tr><th>Produto</th><th>Lucro</th><th>Receita</th><th>Qtd</th></tr></thead>
+          <tbody>
+            <tr th:each="p : ${report.leastByProfit}">
+              <td><strong th:text="${p.productName}"></strong></td>
+              <td>R$ <span th:text="${#numbers.formatDecimal(p.profit,1,'COMMA',2,'POINT')}"></span></td>
+              <td>R$ <span th:text="${#numbers.formatDecimal(p.revenue,1,'COMMA',2,'POINT')}"></span></td>
+              <td th:text="${#numbers.formatDecimal(p.quantity,1,'COMMA',1,'POINT')}"></td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(report.leastByProfit)}"><td colspan="4" style="text-align:center;color:#9e7a8a;">Sem dados</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="two-col" style="margin-top:1rem;">
+      <div class="table-card">
+        <div class="table-header"><h3>✅ Maior margem % (sobre receita)</h3></div>
+        <table>
+          <thead><tr><th>Produto</th><th>Margem</th><th>Lucro</th><th>Receita</th></tr></thead>
+          <tbody>
+            <tr th:each="p : ${report.bestMargin}">
+              <td th:text="${p.productName}"></td>
+              <td><span class="badge badge-green" th:text="${#numbers.formatDecimal(p.marginPercent,1,'COMMA',1,'POINT')} + '%'"></span></td>
+              <td>R$ <span th:text="${#numbers.formatDecimal(p.profit,1,'COMMA',2,'POINT')}"></span></td>
+              <td>R$ <span th:text="${#numbers.formatDecimal(p.revenue,1,'COMMA',2,'POINT')}"></span></td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(report.bestMargin)}"><td colspan="4" style="text-align:center;color:#9e7a8a;">Sem dados</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="table-card">
+        <div class="table-header"><h3>⚠️ Menor margem %</h3></div>
+        <table>
+          <thead><tr><th>Produto</th><th>Margem</th><th>Lucro</th><th>Receita</th></tr></thead>
+          <tbody>
+            <tr th:each="p : ${report.worstMargin}">
+              <td th:text="${p.productName}"></td>
+              <td><span class="badge badge-pink" th:text="${#numbers.formatDecimal(p.marginPercent,1,'COMMA',1,'POINT')} + '%'"></span></td>
+              <td>R$ <span th:text="${#numbers.formatDecimal(p.profit,1,'COMMA',2,'POINT')}"></span></td>
+              <td>R$ <span th:text="${#numbers.formatDecimal(p.revenue,1,'COMMA',2,'POINT')}"></span></td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(report.worstMargin)}"><td colspan="4" style="text-align:center;color:#9e7a8a;">Sem dados</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="table-card" style="margin-top:1rem;">
+      <div class="table-header"><h3>🔥 Mais populares (por quantidade)</h3></div>
+      <table>
+        <thead><tr><th>Produto</th><th>Qtd</th><th>Receita</th><th>Lucro</th></tr></thead>
+        <tbody>
+          <tr th:each="p : ${report.mostPopular}">
+            <td><strong th:text="${p.productName}"></strong></td>
+            <td th:text="${#numbers.formatDecimal(p.quantity,1,'COMMA',1,'POINT')}"></td>
+            <td>R$ <span th:text="${#numbers.formatDecimal(p.revenue,1,'COMMA',2,'POINT')}"></span></td>
+            <td>R$ <span th:text="${#numbers.formatDecimal(p.profit,1,'COMMA',2,'POINT')}"></span></td>
+          </tr>
+          <tr th:if="${#lists.isEmpty(report.mostPopular)}"><td colspan="4" style="text-align:center;color:#9e7a8a;">Sem dados</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="table-card" style="margin-top:1rem;">
+      <div class="table-header"><h3>Resumo por produto (período filtrado)</h3></div>
+      <table>
+        <thead><tr><th>Produto</th><th>Grupo</th><th>Qtd</th><th>Receita</th><th>Custo</th><th>Lucro</th><th>Margem %</th></tr></thead>
+        <tbody>
+          <tr th:each="p : ${report.productMetrics}">
+            <td th:text="${p.productName}"></td>
+            <td><span class="badge badge-gray" th:text="${p.productGroup ?: '—'}"></span></td>
+            <td th:text="${#numbers.formatDecimal(p.quantity,1,'COMMA',1,'POINT')}"></td>
+            <td>R$ <span th:text="${#numbers.formatDecimal(p.revenue,1,'COMMA',2,'POINT')}"></span></td>
+            <td>R$ <span th:text="${#numbers.formatDecimal(p.cost,1,'COMMA',2,'POINT')}"></span></td>
+            <td>R$ <span th:text="${#numbers.formatDecimal(p.profit,1,'COMMA',2,'POINT')}"></span></td>
+            <td th:text="${#numbers.formatDecimal(p.marginPercent,1,'COMMA',1,'POINT')} + '%'"></td>
+          </tr>
+          <tr th:if="${#lists.isEmpty(report.productMetrics)}"><td colspan="7" style="text-align:center;color:#9e7a8a;">Nenhuma venda no período com estes filtros</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p style="margin-top:1.5rem;">
+      <a th:href="@{/admin/vendas}" class="btn btn-blue btn-sm">Registrar / editar vendas</a>
+    </p>
+  </div>
+</div>
+
+<script type="application/json" id="fin-daily-json" th:text="${dailyJson}"></script>
+<script type="application/json" id="fin-product-json" th:text="${productJson}"></script>
+<script type="application/json" id="fin-product-month-json" th:text="${productMonthJson}"></script>
+
+<script>
+  const dailyData = JSON.parse(document.getElementById('fin-daily-json').textContent);
+  const productData = JSON.parse(document.getElementById('fin-product-json').textContent);
+  const productMonthData = JSON.parse(document.getElementById('fin-product-month-json').textContent);
+
+  let finChart = null;
+
+  function num(v) { return v != null ? Number(v) : 0; }
+
+  function metricVal(row, metric) {
+    if (metric === 'profit') return num(row.profit);
+    if (metric === 'revenue') return num(row.revenue);
+    if (metric === 'cost') return num(row.cost);
+    if (metric === 'quantity') return num(row.quantity);
+    return 0;
+  }
+
+  function buildDataset() {
+    const groupBy = document.getElementById('finGroupBy').value;
+    const metric = document.getElementById('finMetric').value;
+    const maxBars = parseInt(document.getElementById('finMaxBars').value, 10) || 20;
+
+    let labels = [];
+    let values = [];
+
+    if (groupBy === 'dia') {
+      dailyData.forEach(d => {
+        labels.push(d.date);
+        values.push(metricVal(d, metric));
+      });
+    } else if (groupBy === 'produto') {
+      let rows = [...productData].sort((a, b) => metricVal(b, metric) - metricVal(a, metric));
+      rows = rows.slice(0, maxBars);
+      rows.forEach(r => {
+        labels.push(r.name);
+        values.push(metricVal(r, metric));
+      });
+    } else {
+      let rows = [...productMonthData].sort((a, b) => metricVal(b, metric) - metricVal(a, metric));
+      rows = rows.slice(0, maxBars);
+      rows.forEach(r => {
+        labels.push(r.label);
+        values.push(metricVal(r, metric));
+      });
+    }
+
+    return { labels, values };
+  }
+
+  function redrawFinChart() {
+    const type = document.getElementById('finChartType').value;
+    const { labels, values } = buildDataset();
+    const ctx = document.getElementById('finMainChart').getContext('2d');
+    if (finChart) finChart.destroy();
+    const color = type === 'line' ? '#3a7cc1' : '#f7a0be';
+    finChart = new Chart(ctx, {
+      type: type,
+      data: {
+        labels,
+        datasets: [{
+          label: document.getElementById('finMetric').selectedOptions[0].text,
+          data: values,
+          backgroundColor: type === 'bar' ? 'rgba(247,160,190,0.75)' : 'rgba(58,124,193,0.2)',
+          borderColor: color,
+          borderWidth: 2,
+          fill: type === 'line',
+          tension: 0.25
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: true } },
+        scales: {
+          x: { ticks: { maxRotation: 45, minRotation: 0 } },
+          y: { beginAtZero: true }
+        }
+      }
+    });
+  }
+
+  document.getElementById('finRedraw').addEventListener('click', redrawFinChart);
+  document.getElementById('finGroupBy').addEventListener('change', redrawFinChart);
+  document.getElementById('finMetric').addEventListener('change', redrawFinChart);
+  document.getElementById('finChartType').addEventListener('change', redrawFinChart);
+  document.getElementById('finMaxBars').addEventListener('change', redrawFinChart);
+  redrawFinChart();
+</script>
+</body>
+</html>

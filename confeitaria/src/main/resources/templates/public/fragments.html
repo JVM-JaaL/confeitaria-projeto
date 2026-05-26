@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="publicHead(pageTitle)">
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title th:text="${pageTitle}">Confeitaria</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+  <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+
+  <!-- navActive: inicio | galeria | depoimentos | faq | contato -->
+  <nav th:fragment="publicNav" class="navbar navbar-expand-lg navbar-light navbar-public sticky-top">
+    <div class="container">
+      <a class="navbar-brand fw-bold d-flex align-items-center gap-2" th:href="${marketing.url('/')}">
+        <span style="font-size:1.75rem;">🎂</span>
+        <span class="font-serif">Confeitaria</span>
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarPublic"
+              aria-controls="navbarPublic" aria-expanded="false" aria-label="Abrir menu">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarPublic">
+        <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-lg-center">
+          <li class="nav-item">
+            <a class="nav-link" th:href="${marketing.url('/')}"
+               th:classappend="${navActive == 'inicio'} ? 'active'">Início</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" th:href="${marketing.url('/galeria')}"
+               th:classappend="${navActive == 'galeria'} ? 'active'">Galeria</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" th:href="${marketing.url('/depoimentos')}"
+               th:classappend="${navActive == 'depoimentos'} ? 'active'">Depoimentos</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" th:href="${marketing.url('/perguntas-frequentes')}"
+               th:classappend="${navActive == 'faq'} ? 'active'">FAQ</a>
+          </li>
+          <li class="nav-item ms-lg-2">
+            <a class="btn btn-public-primary btn-sm px-3 rounded-pill" th:href="${marketing.url('/contato')}"
+               th:classappend="${navActive == 'contato'} ? 'active'">
+              <i class="fas fa-envelope me-1"></i> Fazer pedido
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <footer th:fragment="publicFooter" class="footer-public mt-auto">
+    <div class="container py-4 py-lg-5">
+      <div class="row g-4">
+        <div class="col-md-4">
+          <h5 class="footer-heading">🎂 Confeitaria Artesanal</h5>
+          <p class="small text-muted mb-0">Bolos e doces sob encomenda, feitos com ingredientes de qualidade e muito carinho.</p>
+        </div>
+        <div class="col-md-4">
+          <h5 class="footer-heading">Links rápidos</h5>
+          <ul class="list-unstyled small mb-0">
+            <li><a th:href="${marketing.url('/')}">Início</a></li>
+            <li><a th:href="${marketing.url('/galeria')}">Galeria</a></li>
+            <li><a th:href="${marketing.url('/depoimentos')}">Depoimentos</a></li>
+            <li><a th:href="${marketing.url('/perguntas-frequentes')}">Perguntas frequentes</a></li>
+            <li><a th:href="${marketing.url('/contato')}">Contato / Pedido</a></li>
+          </ul>
+        </div>
+        <div class="col-md-4">
+          <h5 class="footer-heading">Admin</h5>
+          <p class="small text-muted mb-2">Gestão do site e campanhas.</p>
+          <a th:href="@{/admin}" class="small"><i class="fas fa-lock me-1"></i> Painel administrativo</a>
+        </div>
+      </div>
+      <hr class="border-secondary-subtle my-4"/>
+      <p class="text-center small text-muted mb-0">&copy; Confeitaria Artesanal. Feito com amor.</p>
+    </div>
+  </footer>
+
+  <th:block th:fragment="publicScripts">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  </th:block>
+</body>
+</html>

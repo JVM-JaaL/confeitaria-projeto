@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head th:replace="~{public/fragments :: publicHead('Depoimentos — Confeitaria Artesanal')}"></head>
+<body class="public-site d-flex flex-column min-vh-100">
+
+<div th:replace="~{public/fragments :: publicNav}"></div>
+
+<main class="flex-grow-1">
+
+<div th:if="${ref != null and !#strings.isEmpty(ref)}" style="background: linear-gradient(135deg,#fde8f0,#e3f0fb); text-align:center; padding:1rem; font-weight:600; color:#6b4a58;">
+  🎉 Você veio por indicação! Mencione <strong th:text="${ref}"></strong> ao entrar em contato e ganhe condições especiais.
+</div>
+
+<div class="bg-calazans-strip py-5 text-center">
+  <div class="container">
+    <h1 class="display-6 font-serif mb-2">O que nossos clientes dizem</h1>
+    <p class="text-muted mb-0">Histórias de quem já docou a vida com a gente</p>
+  </div>
+</div>
+
+<section style="background: linear-gradient(135deg,var(--pink-100),var(--blue-100)); padding:4rem 0;">
+  <div class="container">
+    <div class="testimonials-grid">
+      <div class="testimonial-card" th:each="t : ${testimonials}">
+        <p class="testimonial-text" th:text="${t.text}"></p>
+        <div>
+          <span class="stars" th:text="${'★'.repeat(t.rating) + '☆'.repeat(5 - t.rating)}"></span>
+          <div class="testimonial-author" th:text="${t.clientName}"></div>
+        </div>
+      </div>
+      <p th:if="${#lists.isEmpty(testimonials)}" style="grid-column:1/-1;text-align:center;color:var(--text-light);padding:2rem;">
+        Em breve novos depoimentos por aqui.
+      </p>
+    </div>
+    <div class="text-center pt-4">
+      <a th:href="${marketing.url('/contato')}" class="btn btn-primary btn-lg rounded-pill px-4">✉️ Quero encomendar também</a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<div th:replace="~{public/fragments :: publicFooter}"></div>
+<th:block th:replace="~{public/fragments :: publicScripts}"></th:block>
+</body>
+</html>
