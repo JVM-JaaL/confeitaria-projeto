@@ -1,0 +1,33 @@
+# Claude Code local settings
+.claude/
+
+# Java / Maven
+target/
+*.class
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+
+# OS
+Thumbs.db
+Desktop.ini
+
+# Logs
+*.log
+
+# H2 database files (project uses ./data)
+confeitaria/data/
+data/
+*.mv.db
+*.trace.db
+
+# Uploads (runtime files)
+confeitaria/uploads/
+uploads/
+
+# Local tools downloaded during setup
+confeitaria/.tools/
+.tools/
+

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head th:replace="~{public/fragments :: publicHead('Perguntas frequentes — Confeitaria')}"></head>
+<body class="public-site d-flex flex-column min-vh-100">
+
+<div th:replace="~{public/fragments :: publicNav}"></div>
+
+<main class="flex-grow-1">
+
+<div th:if="${ref != null and !#strings.isEmpty(ref)}" style="background: linear-gradient(135deg,#EBF5FF,#E8F4FD); text-align:center; padding:1rem; font-weight:600; color:#1E3A5F;">
+  🎉 Você veio por indicação! Mencione <strong th:text="${ref}"></strong> ao entrar em contato e ganhe condições especiais.
+</div>
+
+<div class="bg-calazans-strip py-5 text-center">
+  <div class="container">
+    <h1 class="display-6 font-serif mb-2">Perguntas Frequentes</h1>
+    <p class="text-muted mb-0">Tire suas dúvidas antes de fazer seu pedido</p>
+  </div>
+</div>
+
+<section class="section">
+  <div class="container" style="max-width:750px;">
+    <div th:each="faq : ${faqs}" class="faq-item">
+      <div class="faq-question">
+        <span th:text="${faq.question}">Pergunta</span>
+        <span class="faq-arrow">▼</span>
+      </div>
+      <div class="faq-answer">
+        <p th:text="${faq.answer}">Resposta</p>
+      </div>
+    </div>
+
+    <div class="text-center mt-5 p-4 bg-white rounded-4 shadow-sm">
+      <h3 class="h5 font-serif mb-2">Ainda tem dúvidas?</h3>
+      <p class="text-muted mb-3">Entre em contato que respondemos com carinho!</p>
+      <a th:href="${marketing.url('/contato')}" class="btn btn-primary rounded-pill px-4">✉️ Fale Conosco</a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<div th:replace="~{public/fragments :: publicFooter}"></div>
+<th:block th:replace="~{public/fragments :: publicScripts}"></th:block>
+
+<script>
+  document.querySelectorAll('.faq-question').forEach(q => {
+    q.addEventListener('click', () => q.parentElement.classList.toggle('open'));
+  });
+</script>
+</body>
+</html>

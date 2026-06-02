@@ -1,0 +1,71 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Links UTM — Admin</title>
+  <link rel="stylesheet" th:href="@{/css/admin.css}"/>
+</head>
+<body>
+<div class="sidebar">
+  <div class="sidebar-logo">🎂 Confeitaria<span>Painel Administrativo</span></div>
+  <nav class="sidebar-nav">
+    <div class="sidebar-section">Geral</div>
+    <a th:href="@{/admin}"><span class="icon">📊</span> Dashboard</a>
+    <a th:href="@{/admin/contatos}"><span class="icon">📬</span> Contatos</a>
+    <a th:href="@{/admin/links-utm}" class="active"><span class="icon">🔗</span> Links UTM</a>
+    <div class="sidebar-section">Conteúdo</div>
+    <a th:href="@{/admin/galeria}"><span class="icon">🖼️</span> Galeria</a>
+    <a th:href="@{/admin/depoimentos}"><span class="icon">💬</span> Depoimentos</a>
+    <a th:href="@{/admin/faqs}"><span class="icon">❓</span> FAQs</a>
+    <div class="sidebar-section">Financeiro</div>
+    <a th:href="@{/admin/ingredientes}"><span class="icon">🥚</span> Ingredientes</a>
+    <a th:href="@{/admin/gastos-mensais}"><span class="icon">📆</span> Gastos mensais</a>
+    <a th:href="@{/admin/receitas}"><span class="icon">📋</span> Receitas</a>
+    <a th:href="@{/admin/financeiro}" th:classappend="${currentPage == 'financeiro'} ? 'active' : ''"><span class="icon">📈</span> Análise financeira</a>
+    <a th:href="@{/admin/vendas}"><span class="icon">💰</span> Vendas</a>
+  </nav>
+  <div class="sidebar-footer"><a th:href="@{/}" target="_blank">🌐 Ver Site</a><br/><br/><a th:href="@{/admin/logout}">🚪 Sair</a></div>
+</div>
+<div class="main-content">
+  <div class="topbar"><div class="topbar-title">🔗 Links UTM</div><div class="topbar-user">👤 admin</div></div>
+  <div class="page-content">
+
+    <div class="alert alert-info">
+      Cadastre combinações de <strong>utm_source</strong>, <strong>utm_medium</strong> e <strong>utm_campaign</strong> com uma URL base.
+      Depois use <strong>Visualizar</strong> para copiar o link completo e usar em anúncios, e-mails ou bio do Instagram.
+    </div>
+
+    <div style="margin-bottom:1rem;">
+      <a th:href="@{/admin/links-utm/novo}" class="btn btn-primary">➕ Novo link UTM</a>
+    </div>
+
+    <div class="table-card">
+      <div class="table-header"><h3>Links cadastrados</h3></div>
+      <table>
+        <thead>
+          <tr><th>Nome</th><th>Campanha</th><th>Fonte</th><th>Mídia</th><th></th></tr>
+        </thead>
+        <tbody>
+          <tr th:each="L : ${links}">
+            <td><strong th:text="${L.name}"></strong></td>
+            <td th:text="${L.utmCampaign}"></td>
+            <td th:text="${L.utmSource}"></td>
+            <td th:text="${L.utmMedium}"></td>
+            <td style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+              <a th:href="@{/admin/links-utm/visualizar/{id}(id=${L.id})}" class="btn btn-blue btn-sm">👁 Visualizar</a>
+              <a th:href="@{/admin/links-utm/editar/{id}(id=${L.id})}" class="btn btn-outline btn-sm">Editar</a>
+              <form th:action="@{/admin/links-utm/excluir/{id}(id=${L.id})}" method="post" style="display:inline;" onsubmit="return confirm('Excluir este link?')">
+                <button type="submit" class="btn btn-danger btn-sm">Excluir</button>
+              </form>
+            </td>
+          </tr>
+          <tr th:if="${#lists.isEmpty(links)}">
+            <td colspan="5" style="text-align:center;color:#A0AEC0;padding:2rem;">Nenhum link UTM ainda.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</body>
+</html>

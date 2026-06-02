@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title th:text="${editMode} ? 'Editar link UTM' : 'Novo link UTM'">Link UTM</title>
+  <link rel="stylesheet" th:href="@{/css/admin.css}"/>
+</head>
+<body>
+<div class="sidebar">
+  <div class="sidebar-logo">🎂 Confeitaria<span>Painel Administrativo</span></div>
+  <nav class="sidebar-nav">
+    <div class="sidebar-section">Geral</div>
+    <a th:href="@{/admin}"><span class="icon">📊</span> Dashboard</a>
+    <a th:href="@{/admin/contatos}"><span class="icon">📬</span> Contatos</a>
+    <a th:href="@{/admin/links-utm}" class="active"><span class="icon">🔗</span> Links UTM</a>
+    <div class="sidebar-section">Conteúdo</div>
+    <a th:href="@{/admin/galeria}"><span class="icon">🖼️</span> Galeria</a>
+    <a th:href="@{/admin/depoimentos}"><span class="icon">💬</span> Depoimentos</a>
+    <a th:href="@{/admin/faqs}"><span class="icon">❓</span> FAQs</a>
+    <div class="sidebar-section">Financeiro</div>
+    <a th:href="@{/admin/ingredientes}"><span class="icon">🥚</span> Ingredientes</a>
+    <a th:href="@{/admin/gastos-mensais}"><span class="icon">📆</span> Gastos mensais</a>
+    <a th:href="@{/admin/receitas}"><span class="icon">📋</span> Receitas</a>
+    <a th:href="@{/admin/financeiro}" th:classappend="${currentPage == 'financeiro'} ? 'active' : ''"><span class="icon">📈</span> Análise financeira</a>
+    <a th:href="@{/admin/vendas}"><span class="icon">💰</span> Vendas</a>
+  </nav>
+  <div class="sidebar-footer"><a th:href="@{/}" target="_blank">🌐 Ver Site</a><br/><br/><a th:href="@{/admin/logout}">🚪 Sair</a></div>
+</div>
+<div class="main-content">
+  <div class="topbar"><div class="topbar-title" th:text="${editMode} ? 'Editar link UTM' : 'Novo link UTM'"></div><div class="topbar-user">👤 admin</div></div>
+  <div class="page-content">
+
+    <div class="admin-form" style="max-width:720px;">
+      <form th:action="${editMode} ? @{/admin/links-utm/editar/{id}(id=${utmLink.id})} : @{/admin/links-utm/novo}" method="post">
+        <div class="form-group">
+          <label>Nome interno *</label>
+          <input type="text" name="name" th:value="${utmLink.name}" placeholder="Ex: Instagram Maio 2026" required/>
+        </div>
+        <div class="form-group">
+          <label>URL base *</label>
+          <input type="url" name="baseUrl" th:value="${utmLink.baseUrl}" placeholder="http://localhost:8080/contato" required/>
+          <small style="color:var(--text-mid);">Página de destino completa (contato, início, etc.)</small>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>utm_source *</label>
+            <input type="text" name="utmSource" th:value="${utmLink.utmSource}" placeholder="instagram" required/>
+          </div>
+          <div class="form-group">
+            <label>utm_medium *</label>
+            <input type="text" name="utmMedium" th:value="${utmLink.utmMedium}" placeholder="social" required/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>utm_campaign *</label>
+          <input type="text" name="utmCampaign" th:value="${utmLink.utmCampaign}" placeholder="pascoa_2026" required/>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>utm_term</label>
+            <input type="text" name="utmTerm" th:value="${utmLink.utmTerm}"/>
+          </div>
+          <div class="form-group">
+            <label>utm_content</label>
+            <input type="text" name="utmContent" th:value="${utmLink.utmContent}"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Descrição curta</label>
+          <textarea name="shortDescription" rows="2" th:text="${utmLink.shortDescription}"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+        <a th:href="@{/admin/links-utm}" class="btn btn-outline">Cancelar</a>
+      </form>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Contatos — Admin</title>
+  <link rel="stylesheet" th:href="@{/css/admin.css}"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div class="sidebar">
+  <div class="sidebar-logo">🎂 Confeitaria<span>Painel Administrativo</span></div>
+  <nav class="sidebar-nav">
+    <div class="sidebar-section">Geral</div>
+    <a th:href="@{/admin}"><span class="icon">📊</span> Dashboard</a>
+    <a th:href="@{/admin/contatos}" class="active"><span class="icon">📬</span> Contatos</a>
+    <a th:href="@{/admin/links-utm}"><span class="icon">🔗</span> Links UTM</a>
+    <div class="sidebar-section">Conteúdo</div>
+    <a th:href="@{/admin/galeria}"><span class="icon">🖼️</span> Galeria</a>
+    <a th:href="@{/admin/depoimentos}"><span class="icon">💬</span> Depoimentos</a>
+    <a th:href="@{/admin/faqs}"><span class="icon">❓</span> FAQs</a>
+    <div class="sidebar-section">Financeiro</div>
+    <a th:href="@{/admin/ingredientes}"><span class="icon">🥚</span> Ingredientes</a>
+    <a th:href="@{/admin/gastos-mensais}"><span class="icon">📆</span> Gastos mensais</a>
+    <a th:href="@{/admin/receitas}"><span class="icon">📋</span> Receitas</a>
+    <a th:href="@{/admin/financeiro}" th:classappend="${currentPage == 'financeiro'} ? 'active' : ''"><span class="icon">📈</span> Análise financeira</a>
+    <a th:href="@{/admin/vendas}"><span class="icon">💰</span> Vendas</a>
+  </nav>
+  <div class="sidebar-footer">
+    <a th:href="@{/}" target="_blank">🌐 Ver Site</a><br/><br/>
+    <a th:href="@{/admin/logout}">🚪 Sair</a>
+  </div>
+</div>
+<div class="main-content">
+  <div class="topbar"><div class="topbar-title">📬 Contatos Recebidos</div><div class="topbar-user">👤 admin</div></div>
+  <div class="page-content">
+
+    <div class="two-col" style="margin-bottom:1.5rem;">
+      <div class="chart-card">
+        <h3>Origem dos Contatos</h3>
+        <div class="chart-wrapper"><canvas id="sourceChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Conversões por Link de Indicação</h3>
+        <div class="chart-wrapper"><canvas id="referralChart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-header"><h3>Todos os Contatos (<span th:text="${#lists.size(contacts)}">0</span>)</h3></div>
+      <table>
+        <thead><tr><th>#</th><th>Nome</th><th>E-mail</th><th>WhatsApp</th><th>Origem</th><th>Referral</th><th>Campanha UTM</th><th>Mensagem</th><th>Data</th><th>Ação</th></tr></thead>
+        <tbody>
+          <tr th:each="c : ${contacts}">
+            <td th:text="${c.id}"></td>
+            <td><strong th:text="${c.name}"></strong></td>
+            <td th:text="${c.email}"></td>
+            <td th:text="${c.phone}"></td>
+            <td><span class="badge badge-blue" th:text="${c.source ?: 'site'}"></span></td>
+            <td><span class="badge badge-pink" th:if="${c.referralCode}" th:text="${c.referralCode}"></span></td>
+            <td style="font-size:0.78rem;max-width:120px;">
+              <span th:if="${c.utmCampaign}" class="badge badge-blue" th:text="${c.utmCampaign}"></span>
+              <span th:if="${c.utmSource}" style="display:block;color:var(--text-light);" th:text="${c.utmSource}"></span>
+              <span th:unless="${c.utmCampaign != null or c.utmSource != null}">—</span>
+            </td>
+            <td style="max-width:250px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" th:text="${c.message}"></td>
+            <td style="font-size:0.8rem;" th:text="${#temporals.format(c.createdAt,'dd/MM/yy HH:mm')}"></td>
+            <td>
+              <form th:action="@{/admin/contatos/delete/{id}(id=${c.id})}" method="post" onsubmit="return confirm('Excluir este contato?')">
+                <button type="submit" class="btn btn-danger btn-sm">🗑</button>
+              </form>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script th:inline="javascript">
+  const sc = /*[[${sourceCounts}]]*/ [];
+  new Chart(document.getElementById('sourceChart'), {
+    type: 'bar',
+    data: { labels: sc.map(r=>r[0]||'?'), datasets: [{ label: 'Contatos', data: sc.map(r=>Number(r[1])), backgroundColor: '#89CFF0', borderRadius: 6 }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
+  });
+  const rc = /*[[${referralCounts}]]*/ [];
+  new Chart(document.getElementById('referralChart'), {
+    type: 'bar',
+    data: { labels: rc.map(r=>r[0]), datasets: [{ label: 'Conversões', data: rc.map(r=>Number(r[1])), backgroundColor: '#91beec', borderRadius: 6 }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
+  });
+</script>
+</body>
+</html>

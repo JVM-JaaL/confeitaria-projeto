@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ingredientes — Admin</title>
+  <link rel="stylesheet" th:href="@{/css/admin.css}"/>
+</head>
+<body>
+<div class="sidebar">
+  <div class="sidebar-logo">🎂 Confeitaria<span>Painel Administrativo</span></div>
+  <nav class="sidebar-nav">
+    <div class="sidebar-section">Geral</div>
+    <a th:href="@{/admin}"><span class="icon">📊</span> Dashboard</a>
+    <a th:href="@{/admin/contatos}"><span class="icon">📬</span> Contatos</a>
+    <a th:href="@{/admin/links-utm}"><span class="icon">🔗</span> Links UTM</a>
+    <div class="sidebar-section">Conteúdo</div>
+    <a th:href="@{/admin/galeria}"><span class="icon">🖼️</span> Galeria</a>
+    <a th:href="@{/admin/depoimentos}"><span class="icon">💬</span> Depoimentos</a>
+    <a th:href="@{/admin/faqs}"><span class="icon">❓</span> FAQs</a>
+    <div class="sidebar-section">Financeiro</div>
+    <a th:href="@{/admin/ingredientes}" class="active"><span class="icon">🥚</span> Ingredientes</a>
+    <a th:href="@{/admin/gastos-mensais}"><span class="icon">📆</span> Gastos mensais</a>
+    <a th:href="@{/admin/receitas}"><span class="icon">📋</span> Receitas</a>
+    <a th:href="@{/admin/financeiro}" th:classappend="${currentPage == 'financeiro'} ? 'active' : ''"><span class="icon">📈</span> Análise financeira</a>
+    <a th:href="@{/admin/vendas}"><span class="icon">💰</span> Vendas</a>
+  </nav>
+  <div class="sidebar-footer"><a th:href="@{/}" target="_blank">🌐 Ver Site</a><br/><br/><a th:href="@{/admin/logout}">🚪 Sair</a></div>
+</div>
+<div class="main-content">
+  <div class="topbar"><div class="topbar-title">🥚 Ingredientes e Preços</div><div class="topbar-user">👤 admin</div></div>
+  <div class="page-content">
+
+    <div class="alert alert-info">
+      💡 Cadastre aqui o preço por kg de cada ingrediente. Esses preços serão usados automaticamente para calcular o custo das receitas.
+    </div>
+
+    <div class="admin-form">
+      <h3 style="margin-bottom:1rem;">➕ Novo Ingrediente</h3>
+      <form th:action="@{/admin/ingredientes/add}" method="post">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nome do ingrediente</label>
+            <input type="text" name="name" placeholder="Ex: Farinha de Trigo" required/>
+          </div>
+          <div class="form-group">
+            <label>Preço por kg (R$)</label>
+            <input type="number" name="pricePerKg" step="0.01" min="0" placeholder="0,00" required/>
+          </div>
+          <div class="form-group">
+            <label>Unidade base</label>
+            <select name="unit">
+              <option value="kg">kg (sólidos)</option>
+              <option value="L">L (líquidos)</option>
+              <option value="un">un (unidades)</option>
+            </select>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary">🥚 Adicionar Ingrediente</button>
+      </form>
+    </div>
+
+    <div class="table-card">
+      <div class="table-header"><h3>Ingredientes Cadastrados (<span th:text="${#lists.size(ingredients)}">0</span>)</h3></div>
+      <table>
+        <thead><tr><th>#</th><th>Ingrediente</th><th>Preço / kg</th><th>Unidade</th><th>Atualizar Preço</th><th>Ação</th></tr></thead>
+        <tbody>
+          <tr th:each="ing : ${ingredients}">
+            <td th:text="${ing.id}"></td>
+            <td><strong th:text="${ing.name}"></strong></td>
+            <td>
+              <span class="badge badge-green">
+                R$ <span th:text="${#numbers.formatDecimal(ing.pricePerKg, 1, 'COMMA', 2, 'POINT')}"></span>
+              </span>
+            </td>
+            <td><span class="badge badge-gray" th:text="${ing.unit}"></span></td>
+            <td>
+              <form th:action="@{/admin/ingredientes/edit/{id}(id=${ing.id})}" method="post" style="display:flex;gap:0.5rem;align-items:center;">
+                <input type="number" name="pricePerKg" step="0.01" min="0" th:value="${ing.pricePerKg}" style="width:100px;padding:0.4rem;"/>
+                <button type="submit" class="btn btn-blue btn-sm">💾 Salvar</button>
+              </form>
+            </td>
+            <td>
+              <form th:action="@{/admin/ingredientes/delete/{id}(id=${ing.id})}" method="post" onsubmit="return confirm('Excluir este ingrediente?')">
+                <button type="submit" class="btn btn-danger btn-sm">🗑</button>
+              </form>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</body>
+</html>

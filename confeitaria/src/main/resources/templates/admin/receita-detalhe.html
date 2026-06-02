@@ -1,0 +1,175 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Receita — Admin</title>
+  <link rel="stylesheet" th:href="@{/css/admin.css}"/>
+</head>
+<body>
+<div class="sidebar">
+  <div class="sidebar-logo">🎂 Confeitaria<span>Painel Administrativo</span></div>
+  <nav class="sidebar-nav">
+    <div class="sidebar-section">Geral</div>
+    <a th:href="@{/admin}"><span class="icon">📊</span> Dashboard</a>
+    <a th:href="@{/admin/contatos}"><span class="icon">📬</span> Contatos</a>
+    <a th:href="@{/admin/links-utm}"><span class="icon">🔗</span> Links UTM</a>
+    <div class="sidebar-section">Conteúdo</div>
+    <a th:href="@{/admin/galeria}"><span class="icon">🖼️</span> Galeria</a>
+    <a th:href="@{/admin/depoimentos}"><span class="icon">💬</span> Depoimentos</a>
+    <a th:href="@{/admin/faqs}"><span class="icon">❓</span> FAQs</a>
+    <div class="sidebar-section">Financeiro</div>
+    <a th:href="@{/admin/ingredientes}"><span class="icon">🥚</span> Ingredientes</a>
+    <a th:href="@{/admin/gastos-mensais}"><span class="icon">📆</span> Gastos mensais</a>
+    <a th:href="@{/admin/receitas}" class="active"><span class="icon">📋</span> Receitas</a>
+    <a th:href="@{/admin/financeiro}" th:classappend="${currentPage == 'financeiro'} ? 'active' : ''"><span class="icon">📈</span> Análise financeira</a>
+    <a th:href="@{/admin/vendas}"><span class="icon">💰</span> Vendas</a>
+  </nav>
+  <div class="sidebar-footer"><a th:href="@{/}" target="_blank">🌐 Ver Site</a><br/><br/><a th:href="@{/admin/logout}">🚪 Sair</a></div>
+</div>
+<div class="main-content">
+  <div class="topbar">
+    <div class="topbar-title">📋 <span th:text="${recipe.name}">Receita</span></div>
+    <div class="topbar-user">👤 admin</div>
+  </div>
+  <div class="page-content">
+
+    <div style="margin-bottom:1rem;display:flex;flex-wrap:wrap;gap:0.75rem;align-items:center;">
+      <a th:href="@{/admin/receitas}" class="btn btn-outline btn-sm">← Voltar às Receitas</a>
+      <span style="font-size:0.85rem;color:var(--text-mid);">Custo fixo referente a:</span>
+      <a th:href="@{/admin/receitas/{id}(id=${recipe.id},mes=${prevMonth})}" class="btn btn-outline btn-sm">← Mês</a>
+      <strong style="font-size:0.9rem;" th:text="${referenceMonth}"></strong>
+      <a th:href="@{/admin/receitas/{id}(id=${recipe.id},mes=${nextMonth})}" class="btn btn-outline btn-sm">Mês →</a>
+      <a th:href="@{/admin/receitas/{id}(id=${recipe.id})}" class="btn btn-outline btn-sm">Atual</a>
+    </div>
+
+    <div class="two-col">
+
+      <!-- Left: Ingredients -->
+      <div>
+        <div class="admin-form">
+          <h3 style="margin-bottom:1rem;">➕ Adicionar Ingrediente</h3>
+          <form th:action="@{/admin/receitas/{id}/addIngredient(id=${recipe.id})}" method="post">
+            <div class="form-group">
+              <label>Ingrediente</label>
+              <select name="ingredientId" required>
+                <option value="">Selecione...</option>
+                <option th:each="ing : ${allIngredients}" th:value="${ing.id}"
+                        th:text="${ing.name + ' (R$ ' + ing.pricePerKg + '/kg)'}"></option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Quantidade em gramas (g)</label>
+              <input type="number" name="quantityGrams" step="0.1" min="0.1" placeholder="Ex: 250" required/>
+            </div>
+            <button type="submit" class="btn btn-primary">➕ Adicionar</button>
+          </form>
+        </div>
+
+        <div class="table-card">
+          <div class="table-header"><h3>Ingredientes da Receita</h3></div>
+          <table>
+            <thead><tr><th>Ingrediente</th><th>Quantidade</th><th>Preço/kg</th><th>Custo</th><th></th></tr></thead>
+            <tbody>
+              <tr th:each="ri : ${recipe.ingredients}">
+                <td th:text="${ri.ingredient.name}"></td>
+                <td th:text="${ri.quantityGrams + 'g'}"></td>
+                <td>R$ <span th:text="${#numbers.formatDecimal(ri.ingredient.pricePerKg,1,'COMMA',2,'POINT')}"></span>/kg</td>
+                <td>
+                  <strong>R$ <span th:text="${#numbers.formatDecimal(ri.totalCost,1,'COMMA',2,'POINT')}"></span></strong>
+                </td>
+                <td>
+                  <form th:action="@{/admin/receitas/{id}/removeIngredient/{riId}(id=${recipe.id},riId=${ri.id})}" method="post">
+                    <button type="submit" class="btn btn-danger btn-sm">✕</button>
+                  </form>
+                </td>
+              </tr>
+              <tr th:if="${#lists.isEmpty(recipe.ingredients)}">
+                <td colspan="5" style="text-align:center;color:#A0AEC0;padding:1.5rem;">Nenhum ingrediente adicionado ainda</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Right: Cost summary -->
+      <div>
+        <div class="cost-highlight">
+          <h3 style="margin-bottom:1rem;font-family:'Playfair Display',serif;">💰 Análise de Custo</h3>
+
+          <div class="cost-row">
+            <span class="cost-label">🥚 Rendimento:</span>
+            <span class="cost-value" th:text="${recipe.yieldDescription ?: (recipe.yieldGrams != null ? recipe.yieldGrams + 'g' : 'Não definido')}"></span>
+          </div>
+          <hr style="border:none;border-top:1px solid rgba(200,120,150,0.2);margin:0.8rem 0;"/>
+
+          <div class="cost-row">
+            <span class="cost-label">📦 1. Custo bruto (ingredientes):</span>
+            <span class="cost-value">
+              R$ <span th:text="${#numbers.formatDecimal(recipe.ingredientCostRaw,1,'COMMA',2,'POINT')}"></span>
+            </span>
+          </div>
+
+          <div class="cost-row">
+            <span class="cost-label">⚙️ 2. Custo marginal ingredientes (+5%):</span>
+            <span class="cost-value" style="color:var(--blue-500);">
+              R$ <span th:text="${#numbers.formatDecimal(recipe.marginalCost,1,'COMMA',2,'POINT')}"></span>
+            </span>
+          </div>
+
+          <div class="cost-row">
+            <span class="cost-label">📆 3. Rateio gastos fixos (<span th:text="${referenceMonth}"></span>):</span>
+            <span class="cost-value">
+              R$ <span th:text="${#numbers.formatDecimal(fixedAllocationPerUnit,1,'COMMA',2,'POINT')}"></span>
+            </span>
+          </div>
+          <p th:if="${estimatedMonthlyUnits.compareTo(T(java.math.BigDecimal).ZERO) == 0}" style="font-size:0.75rem;color:#c45b7a;margin:0 0 0.5rem 0;">
+            Defina a produção mensal estimada em <a th:href="@{/admin/gastos-mensais(mes=${referenceMonth})}">Gastos mensais</a> para ativar o rateio.
+          </p>
+
+          <hr style="border:none;border-top:1px solid rgba(200,120,150,0.2);margin:0.8rem 0;"/>
+
+          <div class="cost-row">
+            <span class="cost-label">🏭 4. Custo total de produção (ingr. + fixos):</span>
+            <span class="cost-value" style="font-weight:700;">
+              R$ <span th:text="${#numbers.formatDecimal(fullProductionCost,1,'COMMA',2,'POINT')}"></span>
+            </span>
+          </div>
+
+          <div th:if="${recipe.yieldGrams != null and recipe.yieldGrams > 0}" class="cost-row">
+            <span class="cost-label">📊 Custo por grama (produção):</span>
+            <span class="cost-value">
+              R$ <span th:text="${#numbers.formatDecimal(costPerGramProduction,1,'COMMA',4,'POINT')}"></span>/g
+            </span>
+          </div>
+
+          <hr style="border:none;border-top:2px solid rgba(200,120,150,0.3);margin:0.8rem 0;"/>
+
+          <div class="cost-row" style="background:white;border-radius:8px;padding:0.8rem;">
+            <span class="cost-label" style="font-size:1rem;font-weight:700;">🏷️ Preço sugerido de venda:</span>
+            <span class="cost-recommended cost-value">
+              R$ <span th:text="${#numbers.formatDecimal(recommendedSalePrice,1,'COMMA',2,'POINT')}"></span>
+            </span>
+          </div>
+
+          <p style="font-size:0.78rem;color:var(--text-light);margin-top:0.8rem;">
+            Ordem: primeiro o custo dos ingredientes (bruto e +5%), depois o rateio dos gastos mensais por batelada, depois o preço sugerido = custo total de produção × 3,0.
+            <a th:href="@{/admin/gastos-mensais(mes=${referenceMonth})}" style="color:var(--blue-500);">Editar gastos deste mês</a>
+          </p>
+        </div>
+
+        <div class="admin-form">
+          <h3 style="margin-bottom:0.8rem;">📝 Informações da Receita</h3>
+          <p><strong>Nome:</strong> <span th:text="${recipe.name}"></span></p>
+          <p><strong>Categoria:</strong> <span class="badge badge-pink" th:text="${recipe.category}"></span></p>
+          <p th:if="${recipe.description}" style="margin-top:0.5rem;color:var(--text-mid);font-size:0.9rem;" th:text="${recipe.description}"></p>
+          <div style="margin-top:1rem;">
+            <a th:href="@{/admin/vendas}" class="btn btn-blue btn-sm">💰 Registrar Venda desta Receita</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</body>
+</html>

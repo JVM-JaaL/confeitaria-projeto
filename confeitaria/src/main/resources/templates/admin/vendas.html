@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Vendas — Admin</title>
+  <link rel="stylesheet" th:href="@{/css/admin.css}"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div class="sidebar">
+  <div class="sidebar-logo">🎂 Confeitaria<span>Painel Administrativo</span></div>
+  <nav class="sidebar-nav">
+    <div class="sidebar-section">Geral</div>
+    <a th:href="@{/admin}"><span class="icon">📊</span> Dashboard</a>
+    <a th:href="@{/admin/contatos}"><span class="icon">📬</span> Contatos</a>
+    <a th:href="@{/admin/links-utm}"><span class="icon">🔗</span> Links UTM</a>
+    <div class="sidebar-section">Conteúdo</div>
+    <a th:href="@{/admin/galeria}"><span class="icon">🖼️</span> Galeria</a>
+    <a th:href="@{/admin/depoimentos}"><span class="icon">💬</span> Depoimentos</a>
+    <a th:href="@{/admin/faqs}"><span class="icon">❓</span> FAQs</a>
+    <div class="sidebar-section">Financeiro</div>
+    <a th:href="@{/admin/ingredientes}"><span class="icon">🥚</span> Ingredientes</a>
+    <a th:href="@{/admin/gastos-mensais}"><span class="icon">📆</span> Gastos mensais</a>
+    <a th:href="@{/admin/receitas}"><span class="icon">📋</span> Receitas</a>
+    <a th:href="@{/admin/financeiro}" th:classappend="${currentPage == 'financeiro'} ? 'active' : ''"><span class="icon">📈</span> Análise financeira</a>
+    <a th:href="@{/admin/vendas}" class="active"><span class="icon">💰</span> Vendas</a>
+  </nav>
+  <div class="sidebar-footer"><a th:href="@{/}" target="_blank">🌐 Ver Site</a><br/><br/><a th:href="@{/admin/logout}">🚪 Sair</a></div>
+</div>
+
+<div class="main-content">
+  <div class="topbar"><div class="topbar-title">💰 Vendas e Financeiro</div><div class="topbar-user">👤 admin</div></div>
+  <div class="page-content">
+
+    <!-- PERIOD FILTER -->
+    <div class="period-filter">
+      <strong>📅 Período:</strong>
+      <form th:action="@{/admin/vendas}" method="get" style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+        <label>De: <input type="date" name="inicio" th:value="${inicio}"/></label>
+        <label>Até: <input type="date" name="fim" th:value="${fim}"/></label>
+        <button type="submit" class="btn btn-primary btn-sm">🔍 Filtrar</button>
+        <a th:href="@{/admin/vendas}" class="btn btn-outline btn-sm">↺ Mês Atual</a>
+      </form>
+    </div>
+
+    <!-- KPI CARDS -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon blue">📦</div>
+        <div>
+          <div class="stat-value" style="font-size:1.4rem;">
+            R$ <span th:text="${#numbers.formatDecimal(totalCost,1,'COMMA',2,'POINT')}"></span>
+          </div>
+          <div class="stat-label">Custo Total no Período</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green">💵</div>
+        <div>
+          <div class="stat-value" style="font-size:1.4rem;">
+            R$ <span th:text="${#numbers.formatDecimal(totalRevenue,1,'COMMA',2,'POINT')}"></span>
+          </div>
+          <div class="stat-label">Receita Total no Período</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon pink">📈</div>
+        <div>
+          <div class="stat-value" style="font-size:1.4rem;"
+               th:style="${totalProfit.compareTo(T(java.math.BigDecimal).ZERO) >= 0} ? 'color:#059669' : 'color:#dc2626'">
+            R$ <span th:text="${#numbers.formatDecimal(totalProfit,1,'COMMA',2,'POINT')}"></span>
+          </div>
+          <div class="stat-label">Lucro Total no Período</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon gold">🧾</div>
+        <div>
+          <div class="stat-value" th:text="${#lists.size(filteredSales)}">0</div>
+          <div class="stat-label">Vendas no Período</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHARTS ROW -->
+    <div class="two-col">
+      <!-- Daily Line Chart -->
+      <div class="chart-card">
+        <h3>📈 Evolução Diária — Custo | Receita | Lucro</h3>
+        <div class="chart-wrapper" style="height:280px;">
+          <canvas id="dailyChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Product bar chart -->
+      <div class="chart-card">
+        <h3>🎂 Por Produto — Receita no Período</h3>
+        <div class="chart-wrapper" style="height:280px;">
+          <canvas id="productChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Group chart -->
+    <div class="chart-card">
+      <h3>📦 Por Grupo de Produto</h3>
+      <div style="display:grid;grid-template-columns:1fr 2fr;gap:1.5rem;align-items:center;">
+        <div class="chart-wrapper" style="height:250px;"><canvas id="groupChart"></canvas></div>
+        <table>
+          <thead><tr><th>Grupo</th><th>Custo</th><th>Receita</th><th>Lucro</th></tr></thead>
+          <tbody>
+            <tr th:each="g : ${groupSummary}">
+              <td><strong th:text="${g[0] ?: 'Sem grupo'}"></strong></td>
+              <td>R$ <span th:text="${#numbers.formatDecimal(g[1],1,'COMMA',2,'POINT')}"></span></td>
+              <td style="color:#059669;">R$ <span th:text="${#numbers.formatDecimal(g[2],1,'COMMA',2,'POINT')}"></span></td>
+              <td>
+                <span th:style="${g[3].doubleValue() >= 0} ? 'color:#059669;font-weight:700' : 'color:#dc2626;font-weight:700'">
+                  R$ <span th:text="${#numbers.formatDecimal(g[3],1,'COMMA',2,'POINT')}"></span>
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ADD SALE FORM -->
+    <div class="admin-form">
+      <h3 style="margin-bottom:1rem;">➕ Registrar Nova Venda</h3>
+      <form th:action="@{/admin/vendas/add}" method="post">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nome do produto *</label>
+            <input type="text" name="productName" placeholder="Ex: Bolo de Chocolate" required/>
+          </div>
+          <div class="form-group">
+            <label>Grupo / Categoria</label>
+            <input type="text" name="productGroup" placeholder="Ex: Bolo, Doce, Torta" list="groupList"/>
+            <datalist id="groupList">
+              <option th:each="g : ${productGroups}" th:value="${g}"></option>
+            </datalist>
+          </div>
+          <div class="form-group">
+            <label>Data da venda *</label>
+            <input type="date" name="saleDate" th:value="${#temporals.format(#temporals.createNow(),'yyyy-MM-dd')}" required/>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Custo (R$) *</label>
+            <input type="number" name="cost" step="0.01" min="0" placeholder="0,00" required/>
+          </div>
+          <div class="form-group">
+            <label>Receita / Preço de venda (R$) *</label>
+            <input type="number" name="revenue" step="0.01" min="0" placeholder="0,00" required/>
+          </div>
+          <div class="form-group">
+            <label>Quantidade</label>
+            <input type="number" name="quantity" step="0.1" min="0.1" value="1"/>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Vincular à receita (opcional)</label>
+            <select name="recipeId">
+              <option value="">Sem vínculo</option>
+              <option th:each="r : ${recipes}" th:value="${r.id}" th:text="${r.name}"></option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Observações</label>
+            <input type="text" name="notes" placeholder="Ex: Pedido da Maria, bolo 20cm"/>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary">💰 Registrar Venda</button>
+      </form>
+    </div>
+
+    <!-- SALES TABLE -->
+    <div class="table-card">
+      <div class="table-header">
+        <h3>📋 Todas as Vendas</h3>
+        <span class="badge badge-gray" th:text="${#lists.size(sales) + ' registros'}"></span>
+      </div>
+      <table>
+        <thead><tr><th>Data</th><th>Produto</th><th>Grupo</th><th>Qtd</th><th>Custo</th><th>Receita</th><th>Lucro</th><th>Margem</th><th>Obs</th><th>Ação</th></tr></thead>
+        <tbody>
+          <tr th:each="s : ${sales}">
+            <td style="font-size:0.85rem;" th:text="${#temporals.format(s.saleDate,'dd/MM/yy')}"></td>
+            <td><strong th:text="${s.productName}"></strong></td>
+            <td><span class="badge badge-pink" th:if="${s.productGroup}" th:text="${s.productGroup}"></span></td>
+            <td th:text="${s.quantity}"></td>
+            <td>R$ <span th:text="${#numbers.formatDecimal(s.cost,1,'COMMA',2,'POINT')}"></span></td>
+            <td style="color:#059669;">R$ <span th:text="${#numbers.formatDecimal(s.revenue,1,'COMMA',2,'POINT')}"></span></td>
+            <td>
+              <strong th:style="${s.profit.compareTo(T(java.math.BigDecimal).ZERO) >= 0} ? 'color:#059669' : 'color:#dc2626'">
+                R$ <span th:text="${#numbers.formatDecimal(s.profit,1,'COMMA',2,'POINT')}"></span>
+              </strong>
+            </td>
+            <td style="font-size:0.85rem;" th:text="${#numbers.formatDecimal(s.margin,1,'COMMA',1,'POINT') + '%'}"></td>
+            <td style="font-size:0.82rem;max-width:150px;" th:text="${s.notes}"></td>
+            <td>
+              <form th:action="@{/admin/vendas/delete/{id}(id=${s.id})}" method="post" onsubmit="return confirm('Excluir venda?')">
+                <button type="submit" class="btn btn-danger btn-sm">🗑</button>
+              </form>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Product detail table -->
+    <div class="table-card">
+      <div class="table-header"><h3>📊 Resumo por Produto no Período</h3></div>
+      <table>
+        <thead><tr><th>Produto</th><th>Custo Total</th><th>Receita Total</th><th>Lucro Total</th></tr></thead>
+        <tbody>
+          <tr th:each="p : ${productSummary}">
+            <td><strong th:text="${p[0]}"></strong></td>
+            <td>R$ <span th:text="${#numbers.formatDecimal(p[1],1,'COMMA',2,'POINT')}"></span></td>
+            <td style="color:#059669;">R$ <span th:text="${#numbers.formatDecimal(p[2],1,'COMMA',2,'POINT')}"></span></td>
+            <td>
+              <strong th:style="${p[3].doubleValue() >= 0} ? 'color:#059669' : 'color:#dc2626'">
+                R$ <span th:text="${#numbers.formatDecimal(p[3],1,'COMMA',2,'POINT')}"></span>
+              </strong>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div><!-- end page-content -->
+</div><!-- end main-content -->
+
+<script th:inline="javascript">
+  // Daily chart
+  const labels = /*[[${chartLabels}]]*/ [];
+  const costs = /*[[${chartCosts}]]*/ [];
+  const revenues = /*[[${chartRevenues}]]*/ [];
+  const profits = /*[[${chartProfits}]]*/ [];
+
+  new Chart(document.getElementById('dailyChart'), {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [
+        { label: 'Custo', data: costs, borderColor: '#89CFF0', backgroundColor: 'rgba(137,207,240,0.12)', tension: 0.4, fill: true },
+        { label: 'Receita', data: revenues, borderColor: '#5BBDE6', backgroundColor: 'rgba(91,189,230,0.12)', tension: 0.4, fill: true },
+        { label: 'Lucro', data: profits, borderColor: '#F06292', backgroundColor: 'rgba(240,98,146,0.12)', tension: 0.4, fill: true }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom' } },
+      scales: { y: { beginAtZero: true, ticks: { callback: v => 'R$ ' + v.toFixed(2) } } }
+    }
+  });
+
+  // Product chart
+  const prodData = /*[[${productSummary}]]*/ [];
+  new Chart(document.getElementById('productChart'), {
+    type: 'bar',
+    data: {
+      labels: prodData.map(p => p[0]),
+      datasets: [
+        { label: 'Custo', data: prodData.map(p => p[1]), backgroundColor: '#C5E8F8', borderRadius: 4 },
+        { label: 'Receita', data: prodData.map(p => p[2]), backgroundColor: '#89CFF0', borderRadius: 4 },
+        { label: 'Lucro', data: prodData.map(p => p[3]), backgroundColor: '#F06292', borderRadius: 4 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom' } },
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+
+  // Group pie chart
+  const groupData = /*[[${groupSummary}]]*/ [];
+  new Chart(document.getElementById('groupChart'), {
+    type: 'doughnut',
+    data: {
+      labels: groupData.map(g => g[0] || 'Sem grupo'),
+      datasets: [{
+        data: groupData.map(g => g[2]),
+        backgroundColor: ['#89CFF0','#FF8FAC','#C5E8F8','#FFD6E7','#5BBDE6','#FFB6C8','#EBF7FF','#FFF0F5'],
+        borderWidth: 0
+      }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+  });
+</script>
+</body>
+</html>

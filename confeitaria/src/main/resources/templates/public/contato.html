@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head th:replace="~{public/fragments :: publicHead('Contato — Confeitaria')}"></head>
+<body class="public-site d-flex flex-column min-vh-100">
+
+<div th:replace="~{public/fragments :: publicNav}"></div>
+
+<main class="flex-grow-1">
+
+<div class="bg-calazans-strip py-5 text-center">
+  <div class="container">
+    <h1 class="display-6 font-serif mb-2">Fazer um Pedido</h1>
+    <p class="text-muted mb-0">Adoramos ouvir suas ideias! Vamos criar algo especial juntos.</p>
+  </div>
+</div>
+
+<section class="section">
+  <div class="container" style="max-width:750px;">
+    <div th:if="${param.sucesso}" class="alert alert-success">
+      🎉 Mensagem enviada com sucesso! Entraremos em contato em breve.
+    </div>
+
+    <div th:if="${ref != null and !#strings.isEmpty(ref)}" class="alert alert-info">
+      🎁 Você foi indicado por <strong th:text="${ref}"></strong>! Mencione isso no seu pedido.
+    </div>
+
+    <div class="form-card">
+      <form th:action="@{/contato}" th:object="${contact}" method="post">
+        <input type="hidden" name="ref" th:value="${ref}"/>
+        <div class="form-group">
+          <label>Nome completo *</label>
+          <input type="text" th:field="*{name}" placeholder="Seu nome" required/>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+          <div class="form-group">
+            <label>E-mail *</label>
+            <input type="email" th:field="*{email}" placeholder="seu@email.com" required/>
+          </div>
+          <div class="form-group">
+            <label>WhatsApp</label>
+            <input type="tel" th:field="*{phone}" placeholder="(11) 99999-9999"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Como nos encontrou?</label>
+          <select name="source">
+            <option value="site">Site</option>
+            <option value="instagram">Instagram</option>
+            <option value="indicacao">Indicação de amigo</option>
+            <option value="google">Google</option>
+            <option value="outro">Outro</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Seu pedido / mensagem *</label>
+          <textarea th:field="*{message}" placeholder="Conte-nos tudo sobre o que você deseja: tipo, sabor, tamanho, data do evento, número de porções..." required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary w-100 py-3" style="border-radius:12px;">✉️ Enviar Mensagem</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<div th:replace="~{public/fragments :: publicFooter}"></div>
+<th:block th:replace="~{public/fragments :: publicScripts}"></th:block>
+</body>
+</html>

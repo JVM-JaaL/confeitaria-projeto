@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Galeria — Admin</title>
+  <link rel="stylesheet" th:href="@{/css/admin.css}"/>
+</head>
+<body>
+<div class="sidebar">
+  <div class="sidebar-logo">🎂 Confeitaria<span>Painel Administrativo</span></div>
+  <nav class="sidebar-nav">
+    <div class="sidebar-section">Geral</div>
+    <a th:href="@{/admin}"><span class="icon">📊</span> Dashboard</a>
+    <a th:href="@{/admin/contatos}"><span class="icon">📬</span> Contatos</a>
+    <a th:href="@{/admin/links-utm}"><span class="icon">🔗</span> Links UTM</a>
+    <div class="sidebar-section">Conteúdo</div>
+    <a th:href="@{/admin/galeria}" class="active"><span class="icon">🖼️</span> Galeria</a>
+    <a th:href="@{/admin/depoimentos}"><span class="icon">💬</span> Depoimentos</a>
+    <a th:href="@{/admin/faqs}"><span class="icon">❓</span> FAQs</a>
+    <div class="sidebar-section">Financeiro</div>
+    <a th:href="@{/admin/ingredientes}"><span class="icon">🥚</span> Ingredientes</a>
+    <a th:href="@{/admin/gastos-mensais}"><span class="icon">📆</span> Gastos mensais</a>
+    <a th:href="@{/admin/receitas}"><span class="icon">📋</span> Receitas</a>
+    <a th:href="@{/admin/financeiro}" th:classappend="${currentPage == 'financeiro'} ? 'active' : ''"><span class="icon">📈</span> Análise financeira</a>
+    <a th:href="@{/admin/vendas}"><span class="icon">💰</span> Vendas</a>
+  </nav>
+  <div class="sidebar-footer"><a th:href="@{/}" target="_blank">🌐 Ver Site</a><br/><br/><a th:href="@{/admin/logout}">🚪 Sair</a></div>
+</div>
+<div class="main-content">
+  <div class="topbar"><div class="topbar-title">🖼️ Galeria de Produtos</div><div class="topbar-user">👤 admin</div></div>
+  <div class="page-content">
+
+    <div class="admin-form">
+      <h3 style="margin-bottom:1rem;">➕ Adicionar Item à Galeria</h3>
+      <form th:action="@{/admin/galeria/add}" method="post" enctype="multipart/form-data">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Título</label>
+            <input type="text" name="title" placeholder="Ex: Bolo de Aniversário" required/>
+          </div>
+          <div class="form-group">
+            <label>Ordem de exibição</label>
+            <input type="number" name="displayOrder" value="0"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Descrição</label>
+          <textarea name="description" placeholder="Descreva o produto..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Foto do produto</label>
+          <input type="file" name="imageFile" accept="image/*"/>
+        </div>
+        <button type="submit" class="btn btn-primary">🖼️ Adicionar à Galeria</button>
+      </form>
+    </div>
+
+    <div class="table-card">
+      <div class="table-header"><h3>Itens da Galeria</h3></div>
+      <table>
+        <thead><tr><th>Foto</th><th>Título</th><th>Descrição</th><th>Visível</th><th>Ordem</th><th>Ações</th></tr></thead>
+        <tbody>
+          <tr th:each="item : ${items}">
+            <td>
+              <img th:if="${item.imagePath != null}" th:src="${item.imagePath}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;"/>
+              <span th:unless="${item.imagePath != null}" style="font-size:2rem;">🎂</span>
+            </td>
+            <td><strong th:text="${item.title}"></strong></td>
+            <td style="max-width:200px;font-size:0.85rem;" th:text="${item.description}"></td>
+            <td>
+              <form th:action="@{/admin/galeria/toggle/{id}(id=${item.id})}" method="post" style="display:inline;">
+                <button type="submit" th:class="${item.visible} ? 'btn btn-success btn-sm' : 'btn btn-outline btn-sm'"
+                        th:text="${item.visible} ? '✅ Visível' : '🚫 Oculto'"></button>
+              </form>
+            </td>
+            <td th:text="${item.displayOrder}"></td>
+            <td>
+              <form th:action="@{/admin/galeria/delete/{id}(id=${item.id})}" method="post" style="display:inline;" onsubmit="return confirm('Excluir?')">
+                <button type="submit" class="btn btn-danger btn-sm">🗑</button>
+              </form>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</body>
+</html>
