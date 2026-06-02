@@ -7,7 +7,7 @@
 </head>
 <body>
 <div class="sidebar">
-  <div class="sidebar-logo">🎂 Confeitaria<span>Painel Administrativo</span></div>
+  <div class="sidebar-logo"><img src="/uploads/logo.png" alt="Quero Mais Doces Finos" style="height:84px;width:auto;display:block;"/><span>Painel Administrativo</span></div>
   <nav class="sidebar-nav">
     <div class="sidebar-section">Geral</div>
     <a th:href="@{/admin}"><span class="icon">📊</span> Dashboard</a>
@@ -51,15 +51,16 @@
           <form th:action="@{/admin/receitas/{id}/addIngredient(id=${recipe.id})}" method="post">
             <div class="form-group">
               <label>Ingrediente</label>
-              <select name="ingredientId" required>
+              <select name="ingredientId" id="ingredientSelect" required>
                 <option value="">Selecione...</option>
                 <option th:each="ing : ${allIngredients}" th:value="${ing.id}"
-                        th:text="${ing.name + ' (R$ ' + ing.pricePerKg + '/kg)'}"></option>
+                        th:attr="data-unit=${ing.unit}"
+                        th:text="${ing.name + ' (R$ ' + ing.pricePerKg + '/' + ing.unit + ')'}"></option>
               </select>
             </div>
             <div class="form-group">
-              <label>Quantidade em gramas (g)</label>
-              <input type="number" name="quantityGrams" step="0.1" min="0.1" placeholder="Ex: 250" required/>
+              <label id="qtyLabel">Quantidade em gramas (g)</label>
+              <input type="number" name="quantityGrams" id="qtyInput" step="0.1" min="0.1" placeholder="Ex: 250" required/>
             </div>
             <button type="submit" class="btn btn-primary">➕ Adicionar</button>
           </form>
@@ -72,7 +73,7 @@
             <tbody>
               <tr th:each="ri : ${recipe.ingredients}">
                 <td th:text="${ri.ingredient.name}"></td>
-                <td th:text="${ri.quantityGrams + 'g'}"></td>
+                <td th:text="${ri.quantityGrams + (ri.ingredient.unit == 'un' ? ' un' : ri.ingredient.unit == 'L' ? 'ml' : 'g')}"></td>
                 <td>R$ <span th:text="${#numbers.formatDecimal(ri.ingredient.pricePerKg,1,'COMMA',2,'POINT')}"></span>/kg</td>
                 <td>
                   <strong>R$ <span th:text="${#numbers.formatDecimal(ri.totalCost,1,'COMMA',2,'POINT')}"></span></strong>
@@ -122,7 +123,7 @@
               R$ <span th:text="${#numbers.formatDecimal(fixedAllocationPerUnit,1,'COMMA',2,'POINT')}"></span>
             </span>
           </div>
-          <p th:if="${estimatedMonthlyUnits.compareTo(T(java.math.BigDecimal).ZERO) == 0}" style="font-size:0.75rem;color:#c45b7a;margin:0 0 0.5rem 0;">
+          <p th:if="${estimatedMonthlyUnits.signum() == 0}" style="font-size:0.75rem;color:#c45b7a;margin:0 0 0.5rem 0;">
             Defina a produção mensal estimada em <a th:href="@{/admin/gastos-mensais(mes=${referenceMonth})}">Gastos mensais</a> para ativar o rateio.
           </p>
 
@@ -171,5 +172,22 @@
     </div>
   </div>
 </div>
+<script>
+(function() {
+  var sel = document.getElementById('ingredientSelect');
+  var lbl = document.getElementById('qtyLabel');
+  var inp = document.getElementById('qtyInput');
+  if (!sel) return;
+  var unitLabels = {kg: 'Quantidade em gramas (g)', L: 'Quantidade em mililitros (ml)', un: 'Quantidade em unidades'};
+  var unitPlaceholders = {kg: 'Ex: 250', L: 'Ex: 500', un: 'Ex: 6'};
+  function updateUnit() {
+    var opt = sel.options[sel.selectedIndex];
+    var unit = opt ? opt.getAttribute('data-unit') || 'kg' : 'kg';
+    lbl.textContent = unitLabels[unit] || unitLabels.kg;
+    inp.placeholder = unitPlaceholders[unit] || unitPlaceholders.kg;
+  }
+  sel.addEventListener('change', updateUnit);
+})();
+</script>
 </body>
 </html>

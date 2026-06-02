@@ -8,7 +8,7 @@
 </head>
 <body>
 <div class="sidebar">
-  <div class="sidebar-logo">🎂 Confeitaria<span>Painel Administrativo</span></div>
+  <div class="sidebar-logo"><img src="/uploads/logo.png" alt="Quero Mais Doces Finos" style="height:84px;width:auto;display:block;"/><span>Painel Administrativo</span></div>
   <nav class="sidebar-nav">
     <div class="sidebar-section">Geral</div>
     <a th:href="@{/admin}"><span class="icon">📊</span> Dashboard</a>
@@ -71,7 +71,7 @@
       <div class="stat-card">
         <div class="stat-icon pink">📈</div>
         <div>
-          <div class="stat-value" th:style="|font-size:1.35rem;${report.totalProfit.compareTo(T(java.math.BigDecimal).ZERO) >= 0 ? 'color:#059669' : 'color:#dc2626'}|">
+          <div class="stat-value" th:style="|font-size:1.35rem;${report.totalProfit.signum() >= 0 ? 'color:#059669' : 'color:#dc2626'}|">
             R$ <span th:text="${#numbers.formatDecimal(report.totalProfit,1,'COMMA',2,'POINT')}"></span>
           </div>
           <div class="stat-label">Lucro</div>
@@ -247,9 +247,9 @@
   </div>
 </div>
 
-<script type="application/json" id="fin-daily-json" th:text="${dailyJson}"></script>
-<script type="application/json" id="fin-product-json" th:text="${productJson}"></script>
-<script type="application/json" id="fin-product-month-json" th:text="${productMonthJson}"></script>
+<script type="application/json" id="fin-daily-json" th:utext="${dailyJson}"></script>
+<script type="application/json" id="fin-product-json" th:utext="${productJson}"></script>
+<script type="application/json" id="fin-product-month-json" th:utext="${productMonthJson}"></script>
 
 <script>
   const dailyData = JSON.parse(document.getElementById('fin-daily-json').textContent);

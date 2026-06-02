@@ -18,11 +18,13 @@ public class DataInitializer implements CommandLineRunner {
     private final UtmLinkRepository utmLinkRepo;
     private final SaleRepository saleRepo;
     private final MonthlyExpenseRepository monthlyExpenseRepo;
+    private final GalleryItemRepository galleryItemRepo;
 
     public DataInitializer(FaqRepository faqRepo, ReferralLinkRepository referralRepo,
                            IngredientRepository ingredientRepo, TestimonialRepository testimonialRepo,
                            CostSettingsRepository costSettingsRepo, UtmLinkRepository utmLinkRepo,
-                           SaleRepository saleRepo, MonthlyExpenseRepository monthlyExpenseRepo) {
+                           SaleRepository saleRepo, MonthlyExpenseRepository monthlyExpenseRepo,
+                           GalleryItemRepository galleryItemRepo) {
         this.faqRepo = faqRepo;
         this.referralRepo = referralRepo;
         this.ingredientRepo = ingredientRepo;
@@ -31,6 +33,7 @@ public class DataInitializer implements CommandLineRunner {
         this.utmLinkRepo = utmLinkRepo;
         this.saleRepo = saleRepo;
         this.monthlyExpenseRepo = monthlyExpenseRepo;
+        this.galleryItemRepo = galleryItemRepo;
     }
 
     @Override
@@ -96,6 +99,10 @@ public class DataInitializer implements CommandLineRunner {
             addTestimonial("Juliana M.", "Fiz a encomenda para o chá de bebê e superou todas as expectativas. As fotos não fazem jus ao sabor!", 5);
         }
 
+        if (galleryItemRepo.count() == 0) {
+            seedGalleryItems();
+        }
+
         if (saleRepo.count() == 0) {
             seedSales();
         }
@@ -103,6 +110,37 @@ public class DataInitializer implements CommandLineRunner {
         if (monthlyExpenseRepo.count() == 0) {
             seedMonthlyExpenses();
         }
+    }
+
+    private void seedGalleryItems() {
+        addGallery("Bolo de Chocolate com Morangos",
+                "Bolo de chocolate recheado com mousse, coberto com ganache e decorado com morangos frescos e brigadeiros dourados.",
+                "/uploads/produto1.jpeg", 1);
+        addGallery("Bolo Chá Revelação",
+                "Bolo especial para chá revelação com decoração azul e rosa, pézinhos de bebê e laços delicados.",
+                "/uploads/produto2.jpeg", 2);
+        addGallery("Trufas Brancas com Nozes Douradas",
+                "Trufas de chocolate branco com pó pérola, decoradas com nozes caramelizadas douradas.",
+                "/uploads/produto3.jpeg", 3);
+        addGallery("Brigadeiros Recheados com Maracujá",
+                "Brigadeiros de chocolate recheados com creme de maracujá — combinação irresistível de sabores.",
+                "/uploads/produto4.jpeg", 4);
+        addGallery("Caixinha de Trufas com Nozes",
+                "Caixinha presenteável com trufas de chocolate branco cobertas com nozes douradas — perfeita para presentes.",
+                "/uploads/produto5.jpeg", 5);
+        addGallery("Mesa de Doces Artesanais",
+                "Mesa completa com trufas brancas, nozes caramelizadas e brigadeiros decorados com flores marsala.",
+                "/uploads/produto6.jpeg", 6);
+    }
+
+    private void addGallery(String title, String description, String imagePath, int order) {
+        var g = new GalleryItem();
+        g.setTitle(title);
+        g.setDescription(description);
+        g.setImagePath(imagePath);
+        g.setDisplayOrder(order);
+        g.setVisible(true);
+        galleryItemRepo.save(g);
     }
 
     private void seedSales() {

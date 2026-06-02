@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
 <head>
   <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -8,7 +8,7 @@
 </head>
 <body>
 <div class="sidebar">
-  <div class="sidebar-logo">🎂 Confeitaria<span>Painel Administrativo</span></div>
+  <div class="sidebar-logo"><img src="/uploads/logo.png" alt="Quero Mais Doces Finos" style="height:84px;width:auto;display:block;"/><span>Painel Administrativo</span></div>
   <nav class="sidebar-nav">
     <div class="sidebar-section">Geral</div>
     <a th:href="@{/admin}"><span class="icon">📊</span> Dashboard</a>
@@ -67,7 +67,7 @@
         <div class="stat-icon pink">📈</div>
         <div>
           <div class="stat-value" style="font-size:1.4rem;"
-               th:style="${totalProfit.compareTo(T(java.math.BigDecimal).ZERO) >= 0} ? 'color:#059669' : 'color:#dc2626'">
+               th:style="${totalProfit.signum() >= 0} ? 'color:#059669' : 'color:#dc2626'">
             R$ <span th:text="${#numbers.formatDecimal(totalProfit,1,'COMMA',2,'POINT')}"></span>
           </div>
           <div class="stat-label">Lucro Total no Período</div>
@@ -193,7 +193,7 @@
             <td>R$ <span th:text="${#numbers.formatDecimal(s.cost,1,'COMMA',2,'POINT')}"></span></td>
             <td style="color:#059669;">R$ <span th:text="${#numbers.formatDecimal(s.revenue,1,'COMMA',2,'POINT')}"></span></td>
             <td>
-              <strong th:style="${s.profit.compareTo(T(java.math.BigDecimal).ZERO) >= 0} ? 'color:#059669' : 'color:#dc2626'">
+              <strong th:style="${s.profit.signum() >= 0} ? 'color:#059669' : 'color:#dc2626'">
                 R$ <span th:text="${#numbers.formatDecimal(s.profit,1,'COMMA',2,'POINT')}"></span>
               </strong>
             </td>

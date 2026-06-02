@@ -24,8 +24,13 @@ public class RecipeIngredient {
 
     public BigDecimal getTotalCost() {
         if (ingredient == null || ingredient.getPricePerKg() == null || quantityGrams == null) return BigDecimal.ZERO;
-        // convert grams to kg then multiply by price
-        BigDecimal kg = quantityGrams.divide(new BigDecimal("1000"), 6, RoundingMode.HALF_UP);
-        return kg.multiply(ingredient.getPricePerKg()).setScale(4, RoundingMode.HALF_UP);
+        String unit = ingredient.getUnit() != null ? ingredient.getUnit() : "kg";
+        if ("un".equalsIgnoreCase(unit)) {
+            // quantityGrams stores number of units; price is per unit
+            return quantityGrams.multiply(ingredient.getPricePerKg()).setScale(4, RoundingMode.HALF_UP);
+        }
+        // kg and L: quantity in g/ml, price per kg/L — same 1000 divisor
+        BigDecimal base = quantityGrams.divide(new BigDecimal("1000"), 6, RoundingMode.HALF_UP);
+        return base.multiply(ingredient.getPricePerKg()).setScale(4, RoundingMode.HALF_UP);
     }
 }

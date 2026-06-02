@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
 <head>
   <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -7,7 +7,7 @@
 </head>
 <body>
 <div class="sidebar">
-  <div class="sidebar-logo">🎂 Confeitaria<span>Painel Administrativo</span></div>
+  <div class="sidebar-logo"><img src="/uploads/logo.png" alt="Quero Mais Doces Finos" style="height:84px;width:auto;display:block;"/><span>Painel Administrativo</span></div>
   <nav class="sidebar-nav">
     <div class="sidebar-section">Geral</div>
     <a th:href="@{/admin}"><span class="icon">📊</span> Dashboard</a>
@@ -43,12 +43,12 @@
             <input type="text" name="name" placeholder="Ex: Farinha de Trigo" required/>
           </div>
           <div class="form-group">
-            <label>Preço por kg (R$)</label>
+            <label id="priceLbl">Preço por kg (R$)</label>
             <input type="number" name="pricePerKg" step="0.01" min="0" placeholder="0,00" required/>
           </div>
           <div class="form-group">
             <label>Unidade base</label>
-            <select name="unit">
+            <select name="unit" id="unitSelect">
               <option value="kg">kg (sólidos)</option>
               <option value="L">L (líquidos)</option>
               <option value="un">un (unidades)</option>
@@ -62,7 +62,7 @@
     <div class="table-card">
       <div class="table-header"><h3>Ingredientes Cadastrados (<span th:text="${#lists.size(ingredients)}">0</span>)</h3></div>
       <table>
-        <thead><tr><th>#</th><th>Ingrediente</th><th>Preço / kg</th><th>Unidade</th><th>Atualizar Preço</th><th>Ação</th></tr></thead>
+        <thead><tr><th>#</th><th>Ingrediente</th><th>Preço base</th><th>Unidade</th><th>Atualizar Preço</th><th>Ação</th></tr></thead>
         <tbody>
           <tr th:each="ing : ${ingredients}">
             <td th:text="${ing.id}"></td>
@@ -90,5 +90,14 @@
     </div>
   </div>
 </div>
+<script>
+(function() {
+  var sel = document.getElementById('unitSelect');
+  var lbl = document.getElementById('priceLbl');
+  if (!sel) return;
+  var map = {kg: 'Preço por kg (R$)', L: 'Preço por litro (R$)', un: 'Preço por unidade (R$)'};
+  sel.addEventListener('change', function() { lbl.textContent = map[this.value] || map.kg; });
+})();
+</script>
 </body>
 </html>
