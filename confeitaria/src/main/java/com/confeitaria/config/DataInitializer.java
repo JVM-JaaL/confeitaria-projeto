@@ -115,22 +115,22 @@ public class DataInitializer implements CommandLineRunner {
     private void seedGalleryItems() {
         addGallery("Bolo de Chocolate com Morangos",
                 "Bolo de chocolate recheado com mousse, coberto com ganache e decorado com morangos frescos e brigadeiros dourados.",
-                "/uploads/produto1.jpeg", 1);
+                "/imagens/WhatsApp%20Image%202026-06-01%20at%2022.45.49.jpeg", 1);
         addGallery("Bolo Chá Revelação",
                 "Bolo especial para chá revelação com decoração azul e rosa, pézinhos de bebê e laços delicados.",
-                "/uploads/produto2.jpeg", 2);
+                "/imagens/WhatsApp%20Image%202026-06-01%20at%2022.45.58.jpeg", 2);
         addGallery("Trufas Brancas com Nozes Douradas",
                 "Trufas de chocolate branco com pó pérola, decoradas com nozes caramelizadas douradas.",
-                "/uploads/produto3.jpeg", 3);
+                "/imagens/WhatsApp%20Image%202026-06-01%20at%2022.46.04.jpeg", 3);
         addGallery("Brigadeiros Recheados com Maracujá",
                 "Brigadeiros de chocolate recheados com creme de maracujá — combinação irresistível de sabores.",
-                "/uploads/produto4.jpeg", 4);
+                "/imagens/WhatsApp%20Image%202026-06-01%20at%2022.46.15.jpeg", 4);
         addGallery("Caixinha de Trufas com Nozes",
                 "Caixinha presenteável com trufas de chocolate branco cobertas com nozes douradas — perfeita para presentes.",
-                "/uploads/produto5.jpeg", 5);
+                "/imagens/WhatsApp%20Image%202026-06-01%20at%2022.46.22.jpeg", 5);
         addGallery("Mesa de Doces Artesanais",
                 "Mesa completa com trufas brancas, nozes caramelizadas e brigadeiros decorados com flores marsala.",
-                "/uploads/produto6.jpeg", 6);
+                "/imagens/WhatsApp%20Image%202026-06-01%20at%2022.46.30.jpeg", 6);
     }
 
     private void addGallery(String title, String description, String imagePath, int order) {

@@ -49,8 +49,8 @@
 | Navbar | `templates/public/fragments.html` | Fragmento `publicNav` — logo, links, botão CTA |
 | CSS hero | `static/css/style.css` | Classe `.hero` (background CSS cover via `style` inline no template) |
 | CSS navbar | `static/css/style.css` | `.navbar-public` (fundo `#f6e8de`) |
-| Imagem do hero | `uploads/principal.png` | Servida por `WebConfig.addResourceHandlers()` |
-| Logo | `uploads/logo.png` | Referenciado em `fragments.html`, altura 64px |
+| Imagem do hero | `Imagens/Principal.png` | Servida por `WebConfig` via `/imagens/Principal.png` |
+| Logo | `Imagens/Logo.png` | Referenciado em `fragments.html` como `/imagens/Logo.png`, altura 64px |
 
 ---
 
@@ -64,7 +64,7 @@
 | Query | `repository/GalleryItemRepository.java` | `findByVisibleTrueOrderByDisplayOrderAsc()` — só itens marcados como visíveis |
 | Template | `templates/public/galeria.html` | Grid `gallery-grid`, `<img>` com `th:src="${item.imagePath}"` |
 | CSS grid | `static/css/style.css` | `.gallery-grid` (auto-fill, minmax 280px) · `.gallery-item img` (height 220px, cover) |
-| Imagens | `uploads/produto1.jpeg`…`produto6.jpeg` | Servidas por `WebConfig` |
+| Imagens | `Imagens/WhatsApp Image *.jpeg` | Servidas por `WebConfig` via `/imagens/**` (URL-encoded) |
 
 ---
 
@@ -300,7 +300,7 @@ fixedPerProductionUnit = Σ MonthlyExpense(FIXO, mês) / CostSettings.estimatedM
 
 ### 4.4 Registro de vendas
 
-**O que faz:** Admin registra vendas com produto, grupo, custo, receita e data. Gera gráficos de acompanhamento do período.
+**O que faz:** Admin registra vendas com produto, grupo, custo, receita e data. Gera gráficos de acompanhamento do período. Ao vincular uma receita, os campos de custo e preço de venda são preenchidos automaticamente com os valores recomendados.
 
 | Camada | Arquivo | Trecho responsável |
 |--------|---------|--------------------|
@@ -311,7 +311,9 @@ fixedPerProductionUnit = Σ MonthlyExpense(FIXO, mês) / CostSettings.estimatedM
 | Chart.js | `templates/admin/vendas.html` | `th:inline="javascript"` + `new Chart(dailyChart, ...)` (linha) e `productChart` (barras) |
 | Lucro e margem | `model/Sale.java` | `getProfit()` = revenue − cost · `getMargin()` = profit/revenue × 100 |
 | Adicionar venda | `controller/SaleController.java` | `POST /admin/vendas/add` — associa receita se `recipeId` fornecido |
-| Template | `templates/admin/vendas.html` | Stat cards + gráficos + tabela + form de registro |
+| **Auto-preenchimento** | `controller/RecipeController.java` | `GET /admin/receitas/{id}/custo-json` — retorna `{cost, recommendedPrice, name}` como JSON |
+| **Auto-preenchimento JS** | `templates/admin/vendas.html` | `fetch('/admin/receitas/{id}/custo-json')` ao selecionar receita; preenche `costInput` e `revenueInput` |
+| Template | `templates/admin/vendas.html` | Select de receita → campos custo/valor → stat cards + gráficos + tabela |
 
 ---
 
@@ -332,7 +334,23 @@ fixedPerProductionUnit = Σ MonthlyExpense(FIXO, mês) / CostSettings.estimatedM
 
 ---
 
-## 5. Upload de Imagens
+## 5. Imagens
+
+O projeto serve imagens de dois diretórios distintos:
+
+### 5a. Imagens estáticas (pasta Imagens/)
+
+**O que faz:** Logo, hero e fotos de galeria são servidas diretamente da pasta `Imagens/` na raiz do projeto. Não requer upload — os arquivos ficam no repositório.
+
+| Camada | Arquivo | Trecho responsável |
+|--------|---------|--------------------|
+| Configuração | `config/WebConfig.java` | Handler `/imagens/**` → `${app.images.dir}` (padrão: `../Imagens`) |
+| Propriedade | `application.properties` | `app.images.dir=../Imagens` |
+| Logo | `templates/admin/*.html` e `fragments.html` | `<img src="/imagens/Logo.png">` (todos os templates admin) |
+| Hero | `templates/public/index.html` | `url('/uploads/principal.png')` no CSS inline → `/imagens/Principal.png` |
+| Galeria inicial | `config/DataInitializer.java` | `seedGalleryItems()` — paths `/imagens/WhatsApp%20Image%20...jpeg` |
+
+### 5b. Upload de imagens pelo admin
 
 **O que faz:** Admin faz upload de imagens pelo painel. As imagens são salvas em disco e servidas como arquivos estáticos.
 
@@ -350,7 +368,7 @@ WebConfig serve /uploads/** → disco
 |--------|---------|--------------------|
 | Receber upload | `controller/ContentAdminController.java` | `POST /admin/galeria/add` — `@RequestParam MultipartFile imageFile` |
 | Salvar arquivo | `service/ImageUploadService.java` | `save(file)` — gera UUID, cria dir, copia, retorna path |
-| Servir arquivo | `config/WebConfig.java` | `addResourceHandlers()` — `/uploads/**` → `file:./uploads/` |
+| Servir arquivo | `config/WebConfig.java` | `addResourceHandlers()` — `/uploads/**` → `${app.upload.dir}` |
 | Config tamanho | `src/main/resources/application.properties` | `spring.servlet.multipart.max-file-size=10MB` |
 | Exibição | `templates/public/galeria.html` | `<img th:src="${item.imagePath}">` |
 
@@ -366,7 +384,7 @@ WebConfig serve /uploads/** → disco
 | Ingredientes | 10 | `config/DataInitializer.java` | `addIngredient()` |
 | Depoimentos | 3 | `config/DataInitializer.java` | `addTestimonial()` |
 | Códigos de indicação | 2 (INSTAGRAM, INDICA) | `config/DataInitializer.java` | `run()` |
-| Itens de galeria | 6 (produto1–6.jpeg) | `config/DataInitializer.java` | `seedGalleryItems()` |
+| Itens de galeria | 6 (WhatsApp Images via `/imagens/**`) | `config/DataInitializer.java` | `seedGalleryItems()` |
 | Vendas de exemplo | 22 (set/2025 e mar/2026) | `config/DataInitializer.java` | `seedSales()` |
 | Gastos mensais | 26 (set/2025) | `config/DataInitializer.java` | `seedMonthlyExpenses()` |
 | CostSettings | 1 (100 unidades/mês) | `config/DataInitializer.java` | `run()` |
@@ -414,12 +432,13 @@ ADMIN (requer login)
   POST /admin/ingredientes/edit/{id}    → editar preço/unidade
   POST /admin/ingredientes/delete/{id}  → excluir
 
-  GET  /admin/receitas                  → lista receitas com custos
-  GET  /admin/receitas/{id}             → detalhe + calculadora
-  POST /admin/receitas/add              → criar receita
-  POST /admin/receitas/{id}/addIngredient         → add ingrediente
+  GET  /admin/receitas                      → lista receitas com custos
+  GET  /admin/receitas/{id}                 → detalhe + calculadora
+  GET  /admin/receitas/{id}/custo-json      → custo e preço recomendado (JSON, usado pelo form de vendas)
+  POST /admin/receitas/add                  → criar receita
+  POST /admin/receitas/{id}/addIngredient           → add ingrediente
   POST /admin/receitas/{id}/removeIngredient/{riId} → remover
-  POST /admin/receitas/delete/{id}      → excluir receita
+  POST /admin/receitas/delete/{id}          → excluir receita
 
   GET  /admin/gastos-mensais            → gastos do mês
   POST /admin/gastos-mensais/add        → adicionar gasto

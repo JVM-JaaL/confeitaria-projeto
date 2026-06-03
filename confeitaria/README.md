@@ -42,28 +42,33 @@ mvn spring-boot:run
 ## 📁 Estrutura do Projeto
 
 ```
-confeitaria/
-├── src/main/java/com/confeitaria/
-│   ├── config/
-│   │   ├── SecurityConfig.java      ← Login e proteção admin
-│   │   ├── WebConfig.java           ← Configuração de uploads
-│   │   └── DataInitializer.java     ← Dados iniciais de exemplo
-│   ├── controller/
-│   │   ├── PublicController.java    ← Páginas públicas
-│   │   ├── AdminController.java     ← Dashboard, galeria, depoimentos
-│   │   ├── RecipeController.java    ← Ingredientes e receitas
-│   │   └── SaleController.java      ← Vendas e relatórios
-│   ├── model/                       ← Entidades JPA
-│   └── repository/                  ← Repositórios Spring Data
-├── src/main/resources/
-│   ├── templates/
-│   │   ├── public/                  ← Site público (Thymeleaf)
-│   │   └── admin/                   ← Painel admin (Thymeleaf)
-│   ├── static/css/
-│   │   ├── style.css                ← CSS do site público (pastel)
-│   │   └── admin.css                ← CSS do admin
-│   └── application.properties
-└── pom.xml
+confeitaria-projeto-master/
+├── Imagens/                         ← Imagens estáticas (logo, hero, galeria)
+│   ├── Logo.png
+│   ├── Principal.png
+│   └── WhatsApp Image *.jpeg        (6 fotos de produtos)
+└── confeitaria/
+    ├── src/main/java/com/confeitaria/
+    │   ├── config/
+    │   │   ├── SecurityConfig.java      ← Login e proteção admin
+    │   │   ├── WebConfig.java           ← Handlers /uploads/** e /imagens/**
+    │   │   └── DataInitializer.java     ← Dados iniciais de exemplo
+    │   ├── controller/
+    │   │   ├── PublicController.java    ← Páginas públicas
+    │   │   ├── AdminController.java     ← Dashboard, galeria, depoimentos
+    │   │   ├── RecipeController.java    ← Ingredientes, receitas e endpoint custo-json
+    │   │   └── SaleController.java      ← Vendas e relatórios
+    │   ├── model/                       ← Entidades JPA
+    │   └── repository/                  ← Repositórios Spring Data
+    ├── src/main/resources/
+    │   ├── templates/
+    │   │   ├── public/                  ← Site público (Thymeleaf)
+    │   │   └── admin/                   ← Painel admin (Thymeleaf)
+    │   ├── static/css/
+    │   │   ├── style.css                ← CSS do site público (pastel)
+    │   │   └── admin.css                ← CSS do admin
+    │   └── application.properties
+    └── pom.xml
 ```
 
 ---
@@ -107,6 +112,10 @@ confeitaria/
    - **Custo marginal** = custo × 1,05 (+5%)
    - **Preço sugerido** = custo marginal × 3,0 (markup padrão)
 
+### Registro de venda vinculado à receita
+
+Ao registrar uma venda em **Admin → Vendas**, selecione a receita base no campo "Vincular à receita". Os campos **Custo** e **Preço de venda** são preenchidos automaticamente com os valores recomendados (custo de produção completo + preço × 3). Os valores são editáveis após o preenchimento automático.
+
 ---
 
 ## 📊 Links de Indicação (Referral)
@@ -139,10 +148,17 @@ O H2 salva dados em arquivo (persistente entre reinicializações):
 
 ---
 
-## 📦 Uploads de Imagens
+## 📦 Imagens
 
-Imagens são salvas na pasta `./uploads/` na raiz do projeto.
-Para backup, copie essa pasta.
+O projeto usa dois diretórios de imagens:
+
+| Diretório | Propriedade | URL servida | Finalidade |
+|-----------|-------------|-------------|------------|
+| `./uploads/` | `app.upload.dir` | `/uploads/**` | Imagens enviadas via formulário admin |
+| `../Imagens/` | `app.images.dir` | `/imagens/**` | Logo, hero e galeria (arquivos estáticos) |
+
+A pasta `Imagens/` fica na **raiz do projeto** (um nível acima de `confeitaria/`).
+Para a VM, ajuste `app.images.dir` em `application.properties` conforme o caminho real.
 
 ---
 

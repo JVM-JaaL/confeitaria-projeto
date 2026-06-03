@@ -64,7 +64,8 @@ Sistema web para confeitaria artesanal feito em **Java 17 + Spring Boot 3.2 + Th
     - `sameOrigin()` para permitir o H2 console em iframe.
 
 - **Uploads / conteúdo estático**: `com.confeitaria.config.WebConfig`
-  - Mapeia `/uploads/**` para a pasta configurada por `app.upload.dir` (padrão `./uploads`).
+  - Mapeia `/uploads/**` para a pasta configurada por `app.upload.dir` (padrão `./uploads`) — destino de novos uploads feitos pelo admin.
+  - Mapeia `/imagens/**` para a pasta configurada por `app.images.dir` (padrão `../Imagens`) — logo, hero e fotos de galeria servidas diretamente do repositório.
 
 ### Camada web (controllers)
 
@@ -102,6 +103,7 @@ Sistema web para confeitaria artesanal feito em **Java 17 + Spring Boot 3.2 + Th
     - `GET /admin/receitas`: lista receitas + formulário de criação
     - `POST /admin/receitas/add`: cria receita e redireciona para o detalhe
     - `GET /admin/receitas/{id}`: detalhe da receita e inclusão de ingredientes
+    - `GET /admin/receitas/{id}/custo-json`: retorna JSON `{name, cost, recommendedPrice}` com custo de produção completo (ingredientes + rateio fixo do mês atual) e preço sugerido (× 3). Usado pelo formulário de vendas para preencher campos automaticamente.
     - `POST /admin/receitas/{id}/addIngredient`: adiciona ingrediente (em gramas)
     - `POST /admin/receitas/{id}/removeIngredient/{riId}`: remove item de ingrediente
     - `POST /admin/receitas/delete/{id}`: remove receita
@@ -112,9 +114,10 @@ Sistema web para confeitaria artesanal feito em **Java 17 + Spring Boot 3.2 + Th
     - Calcula totais (custo, receita, lucro).
     - Monta séries de gráfico diário.
     - Busca resumos por produto e por grupo (consultas agregadas no repositório).
-    - Também carrega lista completa de vendas recentes e receitas para vincular na criação.
+    - Carrega lista completa de vendas recentes e receitas para vincular na criação.
   - `POST /admin/vendas/add`: cria venda (data padrão = hoje; receita opcional via `recipeId`).
   - `POST /admin/vendas/delete/{id}`: remove venda.
+  - **Auto-preenchimento no formulário:** ao selecionar uma receita, o JS faz `GET /admin/receitas/{id}/custo-json` e preenche os campos Custo e Preço de venda com os valores recomendados. O texto "Sugerido pela receita" aparece abaixo dos campos.
 
 ### Modelo e persistência (JPA)
 
@@ -148,7 +151,8 @@ Pontos importantes em `src/main/resources/application.properties`:
 
 - **H2 em arquivo**: `jdbc:h2:file:./data/confeitaria;DB_CLOSE_ON_EXIT=FALSE`
 - **DDL**: `spring.jpa.hibernate.ddl-auto=update` (atualiza schema automaticamente)
-- **Uploads**: `app.upload.dir=./uploads`
+- **Uploads (novos arquivos)**: `app.upload.dir=./uploads`
+- **Imagens estáticas**: `app.images.dir=../Imagens` — aponta para a pasta `Imagens/` na raiz do projeto. Altere este valor na VM se necessário.
 - **Thymeleaf cache**: desativado (`spring.thymeleaf.cache=false`) para desenvolvimento
 
 ## Fluxo funcional resumido
@@ -163,6 +167,10 @@ Pontos importantes em `src/main/resources/application.properties`:
   - Admin cadastra ingredientes com preço por kg.
   - Admin monta receita (ingredientes em gramas).
   - O sistema calcula custo total (+5%) e preço recomendado (x3).
+- **Vendas vinculadas a receitas**
+  - Ao registrar uma venda, o admin seleciona a receita base.
+  - Os campos Custo e Preço de venda são preenchidos automaticamente via `GET /admin/receitas/{id}/custo-json`.
+  - Os valores são editáveis antes de salvar.
 - **Gastos mensais**
   - Admin registra gastos **fixos** (aluguel, luz…) e **eventuais** (perda, roubo…) por mês.
   - Apenas os fixos entram no rateio por batelada (`fixedTotal ÷ unidades_estimadas`).
@@ -220,5 +228,7 @@ Pontos importantes em `src/main/resources/application.properties`:
 - **Login admin**: `SecurityConfig` + template `templates/admin/login.html`
 - **Rotas admin**: controllers em `com.confeitaria.controller.*`
 - **Banco**: `application.properties` (URL H2) + `/h2-console`
-- **Uploads**: `app.upload.dir` e `WebConfig` (mapeamento `/uploads/**`)
+- **Uploads (novos arquivos)**: `app.upload.dir` e `WebConfig` (mapeamento `/uploads/**`)
+- **Imagens não aparecem**: verifique `app.images.dir` em `application.properties` e se a pasta `Imagens/` existe no caminho configurado
+- **Auto-preenchimento de venda não funciona**: verifique se o endpoint `GET /admin/receitas/{id}/custo-json` retorna JSON válido (testar no browser com o ID de uma receita existente)
 

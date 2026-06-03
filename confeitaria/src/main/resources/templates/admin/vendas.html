@@ -8,7 +8,7 @@
 </head>
 <body>
 <div class="sidebar">
-  <div class="sidebar-logo"><img src="/uploads/logo.png" alt="Quero Mais Doces Finos" style="height:84px;width:auto;display:block;"/><span>Painel Administrativo</span></div>
+  <div class="sidebar-logo"><img src="/imagens/Logo.png" alt="Quero Mais Doces Finos" style="height:84px;width:auto;display:block;"/><span>Painel Administrativo</span></div>
   <nav class="sidebar-nav">
     <div class="sidebar-section">Geral</div>
     <a th:href="@{/admin}"><span class="icon">📊</span> Dashboard</a>
@@ -147,22 +147,8 @@
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>Custo (R$) *</label>
-            <input type="number" name="cost" step="0.01" min="0" placeholder="0,00" required/>
-          </div>
-          <div class="form-group">
-            <label>Receita / Preço de venda (R$) *</label>
-            <input type="number" name="revenue" step="0.01" min="0" placeholder="0,00" required/>
-          </div>
-          <div class="form-group">
-            <label>Quantidade</label>
-            <input type="number" name="quantity" step="0.1" min="0.1" value="1"/>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
             <label>Vincular à receita (opcional)</label>
-            <select name="recipeId">
+            <select name="recipeId" id="recipeSelect">
               <option value="">Sem vínculo</option>
               <option th:each="r : ${recipes}" th:value="${r.id}" th:text="${r.name}"></option>
             </select>
@@ -170,6 +156,22 @@
           <div class="form-group">
             <label>Observações</label>
             <input type="text" name="notes" placeholder="Ex: Pedido da Maria, bolo 20cm"/>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Custo (R$) *</label>
+            <input type="number" name="cost" id="costInput" step="0.01" min="0" placeholder="0,00" required/>
+            <small id="costHint" style="color:#5BBDE6;display:none;">Sugerido pela receita</small>
+          </div>
+          <div class="form-group">
+            <label>Receita / Preço de venda (R$) *</label>
+            <input type="number" name="revenue" id="revenueInput" step="0.01" min="0" placeholder="0,00" required/>
+            <small id="revenueHint" style="color:#5BBDE6;display:none;">Sugerido pela receita</small>
+          </div>
+          <div class="form-group">
+            <label>Quantidade</label>
+            <input type="number" name="quantity" step="0.1" min="0.1" value="1"/>
           </div>
         </div>
         <button type="submit" class="btn btn-primary">💰 Registrar Venda</button>
@@ -288,6 +290,28 @@
       }]
     },
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+  });
+
+  // Preenche custo e preço ao selecionar receita
+  document.getElementById('recipeSelect').addEventListener('change', function () {
+    const id = this.value;
+    const costInput = document.getElementById('costInput');
+    const revenueInput = document.getElementById('revenueInput');
+    const costHint = document.getElementById('costHint');
+    const revenueHint = document.getElementById('revenueHint');
+    if (!id) {
+      costHint.style.display = 'none';
+      revenueHint.style.display = 'none';
+      return;
+    }
+    fetch('/admin/receitas/' + id + '/custo-json')
+      .then(r => r.json())
+      .then(data => {
+        costInput.value = data.cost;
+        revenueInput.value = data.recommendedPrice;
+        costHint.style.display = 'inline';
+        revenueHint.style.display = 'inline';
+      });
   });
 </script>
 </body>

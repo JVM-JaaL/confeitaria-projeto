@@ -9,8 +9,11 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.YearMonth;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
 @Controller
@@ -141,5 +144,21 @@ public class RecipeController {
     public String deleteRecipe(@PathVariable Long id) {
         recipeRepo.deleteById(id);
         return "redirect:/admin/receitas";
+    }
+
+    @GetMapping("/receitas/{id}/custo-json")
+    @ResponseBody
+    public Map<String, Object> recipeCustoJson(@PathVariable Long id) {
+        var recipe = recipeRepo.findById(id).orElseThrow();
+        YearMonth ym = YearMonth.now();
+        BigDecimal fixedPerUnit = recipeService.computeFixedAllocationPerUnit(ym.toString());
+        BigDecimal fullCost = recipe.getMarginalCost().add(fixedPerUnit);
+        BigDecimal recommendedPrice = fullCost.multiply(new BigDecimal("3.0"));
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("name", recipe.getName());
+        result.put("cost", fullCost.setScale(2, RoundingMode.HALF_UP));
+        result.put("recommendedPrice", recommendedPrice.setScale(2, RoundingMode.HALF_UP));
+        return result;
     }
 }

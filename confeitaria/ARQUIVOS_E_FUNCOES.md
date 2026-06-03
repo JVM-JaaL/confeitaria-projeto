@@ -23,11 +23,11 @@ com.confeitaria
 ## config/
 
 ### `WebConfig.java`
-Registra o handler de recursos estáticos para uploads.
+Registra os handlers de recursos estáticos para imagens.
 
 | Método | O que faz |
 |--------|-----------|
-| `addResourceHandlers(registry)` | Mapeia URL `/uploads/**` → diretório físico `${app.upload.dir}` (padrão: `./uploads`). Sem isso as imagens enviadas não são servidas pelo servidor. |
+| `addResourceHandlers(registry)` | Mapeia `/uploads/**` → `${app.upload.dir}` (padrão: `./uploads`) para imagens enviadas via formulário admin. Também mapeia `/imagens/**` → `${app.images.dir}` (padrão: `../Imagens`) para servir logo, hero e galeria da pasta `Imagens/` na raiz do projeto. |
 
 ---
 
@@ -48,7 +48,7 @@ Semeia dados de exemplo no banco na primeira execução (guard `count() == 0`).
 | Método | O que faz |
 |--------|-----------|
 | `run(args)` | Ponto de entrada; chama todos os `seed*()` se as tabelas estiverem vazias. |
-| `seedGalleryItems()` | Insere 6 itens de galeria apontando para `produto1.jpeg`…`produto6.jpeg` em `/uploads/`. |
+| `seedGalleryItems()` | Insere 6 itens de galeria apontando para os arquivos `WhatsApp Image *.jpeg` da pasta `Imagens/`, servidos via `/imagens/**` (paths URL-encoded). |
 | `seedSales()` | Insere 22 vendas de exemplo (setembro/2025 e março/2026) com categorias Vendas, Shopee, Indicação, Doces Finos. |
 | `seedMonthlyExpenses()` | Insere 26 despesas para setembro/2025: fixas (Enel, aluguel, mão-de-obra, ovos) e eventuais (Uber, curso, reembolso Shopee). |
 | `addGallery(title, desc, imagePath, order)` | Helper: cria e salva um `GalleryItem`. |
@@ -100,7 +100,7 @@ Item da galeria de produtos.
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
 | `title`, `description` | String | Texto exibido sob a foto |
-| `imagePath` | String | Caminho relativo, ex: `/uploads/produto1.jpeg` |
+| `imagePath` | String | Caminho relativo, ex: `/imagens/Logo.png` ou `/uploads/<uuid>_foto.jpg` |
 | `visible` | boolean | Controla exibição no site |
 | `displayOrder` | int | Ordem de exibição |
 | `createdAt` | LocalDateTime | Data de cadastro |
@@ -350,6 +350,7 @@ Gerencia ingredientes e receitas.
 | `POST /admin/ingredientes/edit/{id}` | `editIngredient()` | Atualiza `name`, `pricePerKg` e `unit`. |
 | `GET /admin/receitas` | `receitas()` | Lista receitas com custo de produção e preço sugerido por unidade. Chama `RecipeService.computeFixedAllocationPerUnit` para o mês atual. |
 | `GET /admin/receitas/{id}` | `recipeDetail()` | Carrega receita completa. Calcula: `fullProductionCost`, `recommendedSalePrice`, `costPerGramProduction`. Suporta navegação por mês (`?mes=yyyy-MM`). |
+| `GET /admin/receitas/{id}/custo-json` | `recipeCustoJson()` | Retorna JSON `{name, cost, recommendedPrice}`. `cost` = custo marginal + rateio fixo do mês atual; `recommendedPrice` = `cost × 3`. Endpoint usado pelo formulário de vendas para auto-preencher campos. |
 | `POST /admin/receitas/add` | `addRecipe()` | Cria receita e redireciona para detalhe. |
 | `POST /admin/receitas/{id}/addIngredient` | `addRecipeIngredient()` | Cria `RecipeIngredient` com o ingrediente e quantidade informados. |
 | `POST /admin/receitas/{id}/removeIngredient/{riId}` | `removeRecipeIngredient()` | Delete o RecipeIngredient. |
@@ -362,9 +363,11 @@ Registro e visualização de vendas.
 
 | Rota | Método | O que faz |
 |------|--------|-----------|
-| `GET /admin/vendas` | `vendas()` | Filtra vendas por período (`inicio`/`fim`, default: mês atual). Calcula totais, gera arrays para gráficos de linha (diário) e barra (por produto/grupo). Passa todas as vendas para a tabela. |
+| `GET /admin/vendas` | `vendas()` | Filtra vendas por período (`inicio`/`fim`, default: mês atual). Calcula totais, gera arrays para gráficos de linha (diário) e barra (por produto/grupo). Passa todas as vendas e a lista de receitas para o formulário. |
 | `POST /admin/vendas/add` | `addSale()` | Salva `Sale`. Se `recipeId` fornecido, associa receita. Se sem data, usa hoje. |
 | `POST /admin/vendas/delete/{id}` | `deleteSale()` | Delete. |
+
+**Comportamento do formulário:** o select "Vincular à receita" aparece antes dos campos Custo e Preço. Ao selecionar uma receita, o JS faz `fetch('/admin/receitas/{id}/custo-json')` e preenche os dois campos automaticamente. Os campos ficam editáveis e exibem o texto "Sugerido pela receita" enquanto houver receita selecionada.
 
 ---
 
@@ -470,7 +473,7 @@ Utilitário estático para gerar a URL completa de um `UtmLink`.
 | `receitas.html` | Form criar receita + tabela com custo de produção e preço sugerido | `recipes` · `fixedAllocationPerUnit` |
 | `receita-detalhe.html` | Ingredientes da receita + calculadora de custo completa + navegação por mês | `recipe` · `referenceMonth` · `fixedAllocationPerUnit` · `fullProductionCost` · `recommendedSalePrice` |
 | `gastos-mensais.html` | Despesas do mês + totais + rateio por unidade + form unidades | `expenses` · `fixedTotal` · `eventualTotal` · `fixedPerProductionUnit` · `costSettings` |
-| `vendas.html` | Totais do período + gráficos (linha diária, barras produto/grupo) + tabela vendas + form nova venda | `filteredSales` · `totalRevenue/Cost/Profit` · `chartLabels/Costs/Revenues/Profits` |
+| `vendas.html` | Totais do período + gráficos (linha diária, barras produto/grupo) + tabela vendas + form nova venda (com select de receita antes de custo/valor; JS auto-preenche ao selecionar receita) | `filteredSales` · `totalRevenue/Cost/Profit` · `chartLabels/Costs/Revenues/Profits` · `recipes` |
 | `financeiro.html` | Filtros avançados + stat cards + gráfico principal interativo Chart.js + rankings de produtos | `report` (FinanceReport) · `dailyJson` · `productJson` · `productMonthJson` |
 | `utm-links.html` | Tabela de links UTM + ações | `utmLinks` |
 | `utm-link-form.html` | Formulário criar/editar link UTM | `utmLink` · `editMode` |
@@ -501,8 +504,12 @@ spring.datasource.url=jdbc:h2:file:./data/confeitaria
 # Porta padrão: 8080
 # Console H2: http://localhost:8080/h2-console
 
-# Diretório de uploads de imagens
+# Diretório de uploads (novos arquivos enviados via admin)
 app.upload.dir=./uploads
+
+# Pasta de imagens estáticas (logo, hero, galeria) — relativo ao diretório de trabalho (confeitaria/)
+# Na VM, altere para o caminho absoluto ou relativo correto
+app.images.dir=../Imagens
 
 # Credenciais admin (mudar em produção)
 app.admin.username=admin
