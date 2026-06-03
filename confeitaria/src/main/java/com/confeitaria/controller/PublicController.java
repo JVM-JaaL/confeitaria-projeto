@@ -114,6 +114,6 @@ public class PublicController {
 
         contactRepo.save(contact);
         log.info("Contato enviado: ref={}, source={}", effectiveRef, contact.getSource());
-        return marketingService.redirectWithMarketing("/contato", session, Map.of("sucesso", "true"));
+        return "redirect:https://w.app/68oeeg";
     }
 }
