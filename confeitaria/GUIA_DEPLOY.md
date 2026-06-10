@@ -1,7 +1,7 @@
 # Guia de Deploy — Quero Mais Doces Finos
 
 > Como publicar o sistema a partir do GitHub no Railway (recomendado) ou expô-lo via Cloudflare Tunnel.  
-> Última atualização: 2026-06-09
+> Última atualização: 2026-06-10
 
 ---
 
@@ -10,11 +10,6 @@
 1. [Pré-requisitos](#1-pré-requisitos)
 2. [Preparar o repositório no GitHub](#2-preparar-o-repositório-no-github)
 3. [Deploy no Railway](#3-deploy-no-railway)
-   - 3.1 Criar o projeto
-   - 3.2 Configurar variáveis de ambiente
-   - 3.3 Persistência: banco de dados e uploads
-   - 3.4 Pasta Imagens/
-   - 3.5 Verificar e acessar
 4. [Domínio personalizado com Cloudflare](#4-domínio-personalizado-com-cloudflare)
 5. [Alternativa: Cloudflare Tunnel (expor VM local)](#5-alternativa-cloudflare-tunnel-expor-vm-local)
 6. [Atualizar o sistema depois do deploy](#6-atualizar-o-sistema-depois-do-deploy)
@@ -22,54 +17,46 @@
 
 ---
 
+## Por que usar Dockerfile
+
+Este projeto tem uma estrutura não-convencional: o `pom.xml` está dentro da subpasta `confeitaria/`, não na raiz do repositório. Além disso, a pasta `Imagens/` que contém logo e galeria fica **um nível acima** do projeto Maven. Tanto o Railway quanto o Cloudflare não conseguem detectar isso automaticamente — daí o erro "failed to build image".
+
+A solução é um `Dockerfile` na **raiz do repositório** que cuida de tudo. Esse arquivo já está criado no projeto em `Dockerfile`.
+
+> **Cloudflare Pages e Workers não suportam Java/Spring Boot.** O Cloudflare só entra neste guia como DNS + proxy na frente do Railway, ou como Tunnel para expor uma VM. Para o deploy em si, use Railway.
+
+---
+
 ## 1. Pré-requisitos
 
-| Item | Versão mínima | Para quê |
-|------|---------------|---------|
-| Java | 17 | Compilar e rodar a aplicação |
-| Maven | 3.8 | Build do projeto |
-| Git | qualquer | Versionar e sincronizar com GitHub |
-| Conta GitHub | — | Hospedar o código-fonte |
-| Conta Railway | — | Hospedar a aplicação (gratuito até certo uso) |
-| Conta Cloudflare | — | Domínio personalizado ou Tunnel (opcional) |
+| Item | Para quê |
+|------|---------|
+| Conta GitHub | Hospedar o código-fonte |
+| Conta Railway | Hospedar a aplicação (tem plano gratuito) |
+| Conta Cloudflare | Domínio personalizado ou Tunnel (opcional) |
+
+Não precisa de Java nem Maven instalados localmente para o deploy — o Dockerfile faz o build dentro do container.
 
 ---
 
 ## 2. Preparar o repositório no GitHub
 
-### 2.1 Criar o repositório
+### 2.1 Verificar os arquivos na raiz
 
-1. Acesse [github.com](https://github.com) → **New repository**
-2. Nome sugerido: `confeitaria-projeto`
-3. Visibilidade: **Private** (recomendado, pois o código contém credenciais padrão)
-4. Não inicialize com README
-
-### 2.2 Subir o código
-
-Execute a partir da raiz do projeto (`confeitaria-projeto-master/`):
-
-```bash
-git init
-git add .
-git commit -m "versão inicial"
-git branch -M main
-git remote add origin https://github.com/SEU_USUARIO/confeitaria-projeto.git
-git push -u origin main
-```
-
-> **Importante:** certifique-se de que a pasta `Imagens/` está incluída no commit. O Railway vai clonar o repositório inteiro e precisa dessa pasta.
-
-### 2.3 Verificar o .gitignore
-
-Confirme que os seguintes diretórios **não** são commitados (dados gerados em runtime):
+O repositório deve ter estes arquivos na raiz (já criados):
 
 ```
-confeitaria/data/          ← banco H2
-confeitaria/uploads/       ← imagens enviadas pelo admin
-confeitaria/target/        ← build Maven
+confeitaria-projeto-master/
+├── Dockerfile          ← instrui o Railway a buildar a aplicação
+├── railway.toml        ← configuração do Railway
+├── .dockerignore       ← evita copiar arquivos desnecessários para o build
+├── Imagens/            ← obrigatório: logo, hero e galeria
+└── confeitaria/        ← projeto Maven
 ```
 
-Se não existir um `.gitignore`, crie um na raiz:
+### 2.2 Verificar o .gitignore
+
+Certifique-se que estes diretórios **não** estão sendo commitados:
 
 ```gitignore
 confeitaria/data/
@@ -79,11 +66,29 @@ confeitaria/target/
 *.trace.db
 ```
 
+### 2.3 Subir o código
+
+Execute a partir da pasta raiz do projeto:
+
+```bash
+git add .
+git commit -m "add Dockerfile para deploy no Railway"
+git push origin main
+```
+
+> Se o repositório ainda não existe no GitHub:
+> ```bash
+> git init
+> git add .
+> git commit -m "versão inicial"
+> git branch -M main
+> git remote add origin https://github.com/SEU_USUARIO/confeitaria-projeto.git
+> git push -u origin main
+> ```
+
 ---
 
 ## 3. Deploy no Railway
-
-O Railway detecta projetos Maven automaticamente e faz o build e deploy sem configuração adicional na maioria dos casos.
 
 ### 3.1 Criar o projeto
 
@@ -91,170 +96,134 @@ O Railway detecta projetos Maven automaticamente e faz o build e deploy sem conf
 2. Clique em **New Project** → **Deploy from GitHub repo**
 3. Autorize o Railway a acessar seu GitHub
 4. Selecione o repositório `confeitaria-projeto`
-5. O Railway tentará detectar o projeto automaticamente
+5. O Railway detecta o `Dockerfile` na raiz e inicia o build automaticamente
 
-### 3.2 Configurar o diretório raiz e o build
+### 3.2 Aguardar o build
 
-O projeto Maven está dentro da subpasta `confeitaria/`. É necessário informar isso ao Railway.
+O build tem dois estágios (pode levar 3–5 minutos na primeira vez):
 
-**Opção A — via painel Railway (mais fácil):**
+1. **Stage 1 — Maven build**: baixa dependências e compila o JAR
+2. **Stage 2 — Runtime**: cria a imagem final com o JAR e a pasta `Imagens/`
 
-1. Acesse o serviço criado → aba **Settings**
-2. Em **Root Directory**, coloque: `confeitaria`
-3. Salve e aguarde o redeploy
+Acompanhe em tempo real na aba **Logs** do serviço.
 
-**Opção B — via arquivo `railway.toml` no repositório:**
-
-Crie o arquivo `confeitaria-projeto-master/railway.toml`:
-
-```toml
-[build]
-builder = "NIXPACKS"
-
-[deploy]
-startCommand = "java -jar target/confeitaria-*.jar"
-```
-
-E crie também `confeitaria-projeto-master/confeitaria/system.properties` para garantir o Java 17:
-
-```properties
-java.runtime.version=17
-```
-
-### 3.3 Persistência: banco de dados e uploads
-
-O Railway usa um **sistema de arquivos efêmero** — qualquer arquivo criado em runtime (banco H2 e uploads) é perdido quando o serviço reinicia ou faz redeploy.
-
-**Solução: volumes persistentes do Railway**
-
-1. No painel do serviço → aba **Volumes**
-2. Clique em **Add Volume**
-3. Monte path: `/app/data` (para o banco H2)
-4. Monte path: `/app/uploads` (para os uploads do admin) — adicione um segundo volume
-
-Após criar os volumes, configure as variáveis de ambiente (próximo passo) para apontar os caminhos corretos.
-
-> Se a perda de dados ao reiniciar for aceitável (ambiente de demonstração), pode pular os volumes.
-
-### 3.4 Configurar variáveis de ambiente
+### 3.3 Configurar variáveis de ambiente
 
 No painel do serviço → aba **Variables**, adicione:
 
 | Variável | Valor sugerido | Descrição |
 |----------|---------------|-----------|
-| `APP_ADMIN_USERNAME` | `admin` | Usuário do painel (troque em produção) |
-| `APP_ADMIN_PASSWORD` | `SuaSenhaForte123` | Senha do painel |
-| `APP_UPLOAD_DIR` | `/app/uploads` | Diretório de uploads (use o path do volume) |
-| `APP_IMAGES_DIR` | `/app/Imagens` | Pasta de imagens estáticas |
-| `SPRING_DATASOURCE_URL` | `jdbc:h2:file:/app/data/confeitaria;DB_CLOSE_ON_EXIT=FALSE` | Banco no volume persistente |
-| `SPRING_THYMELEAF_CACHE` | `true` | Ativar cache em produção |
-| `SERVER_PORT` | `8080` | Porta (Railway usa a variável `PORT` internamente) |
+| `APP_ADMIN_USERNAME` | `admin` | Usuário do painel |
+| `APP_ADMIN_PASSWORD` | `SuaSenhaForte123` | Senha do painel — **troque antes de publicar** |
+| `SPRING_THYMELEAF_CACHE` | `true` | Melhor performance em produção |
 
-> **Dica:** O Railway injeta automaticamente a variável `PORT`. O Spring Boot a lê via `SERVER_PORT`. Se o app não subir na porta certa, adicione também `SERVER_PORT=${{PORT}}` nas variáveis.
+As variáveis `APP_IMAGES_DIR` e `APP_UPLOAD_DIR` já estão configuradas no próprio `Dockerfile` (`/app/Imagens` e `/app/uploads`). Só é necessário sobrescrever se quiser apontar para outro caminho.
 
-### 3.5 Pasta Imagens/
+O Railway injeta `PORT` automaticamente. O `application.properties` já está configurado com `server.port=${PORT:8080}` para lê-la.
 
-A pasta `Imagens/` está na raiz do repositório. Quando o Railway define o **Root Directory** como `confeitaria`, o diretório de trabalho muda para `confeitaria/` e a pasta `Imagens/` fica em `../Imagens` — que é justamente o padrão `app.images.dir=../Imagens`.
+### 3.4 Persistência: banco de dados e uploads
 
-Se você montou o volume e quer servir as imagens a partir dele, copie os arquivos para o volume ou suba as imagens pelo painel admin.
+O Railway tem **sistema de arquivos efêmero** — banco H2 e uploads são perdidos a cada redeploy.
 
-Caso queira usar as imagens do repositório, deixe `APP_IMAGES_DIR` apontando para o path absoluto onde o Railway clona o projeto (geralmente `/app/../Imagens` ou `/Imagens` — verifique nos logs de build).
+**Para dados persistentes (produção):**
 
-### 3.6 Verificar e acessar
+1. Railway → serviço → aba **Volumes** → **Add Volume**
+2. Crie um volume e monte em `/app/data` (banco H2)
+3. Crie outro volume e monte em `/app/uploads` (fotos enviadas pelo admin)
 
-1. Após o deploy, vá em **Settings** → **Networking** → **Generate Domain**
-2. O Railway gera uma URL tipo `confeitaria-xyz.railway.app`
-3. Acesse `https://confeitaria-xyz.railway.app` — site público
-4. Acesse `https://confeitaria-xyz.railway.app/admin` — painel admin
+Após criar os volumes, adicione a variável:
 
-**Verificar logs:**
+| Variável | Valor |
+|----------|-------|
+| `SPRING_DATASOURCE_URL` | `jdbc:h2:file:/app/data/confeitaria;DB_CLOSE_ON_EXIT=FALSE` |
 
-No painel → aba **Logs** — se aparecer algo como:
+> Se for só para demonstração, pode pular os volumes — o sistema sobe com os dados de exemplo do `DataInitializer` a cada restart.
 
-```
-Started ConfeitariaApplication in 4.2 seconds
-```
+### 3.5 Gerar a URL pública
 
-O deploy foi bem-sucedido.
+1. Railway → serviço → **Settings** → **Networking** → **Generate Domain**
+2. Copie a URL gerada (ex: `confeitaria-producao.up.railway.app`)
+3. Acesse o site público: `https://confeitaria-producao.up.railway.app`
+4. Acesse o admin: `https://confeitaria-producao.up.railway.app/admin`
 
 ---
 
 ## 4. Domínio personalizado com Cloudflare
 
-Se você tem um domínio próprio (ex: `queromaisdocesfinos.com.br`) gerenciado no Cloudflare, pode apontá-lo para o Railway.
+Se você tem um domínio próprio (ex: `queromaisdocesfinos.com.br`) no Cloudflare, pode apontá-lo para o Railway. O Cloudflare atua como DNS + proxy/CDN.
 
-> **Nota:** O Cloudflare Pages e Workers **não suportam aplicações Java/Spring Boot** diretamente. O Cloudflare aqui atua como DNS + proxy/CDN na frente do Railway.
-
-### 4.1 Configurar o domínio no Railway
+### 4.1 Adicionar o domínio no Railway
 
 1. Railway → serviço → **Settings** → **Networking** → **Custom Domain**
-2. Digite seu domínio: `www.queromaisdocesfinos.com.br`
-3. O Railway exibe um registro CNAME para adicionar no DNS
+2. Digite: `www.queromaisdocesfinos.com.br`
+3. O Railway exibe o registro CNAME para adicionar
 
 ### 4.2 Configurar o DNS no Cloudflare
 
 1. Acesse o [Cloudflare Dashboard](https://dash.cloudflare.com)
-2. Selecione o domínio
-3. Vá em **DNS** → **Add record**
-4. Tipo: `CNAME`
-5. Nome: `www`
-6. Destino: o valor fornecido pelo Railway (ex: `confeitaria-xyz.up.railway.app`)
-7. Proxy: **Habilitado** (nuvem laranja) — adiciona CDN e HTTPS automático
+2. Selecione o domínio → **DNS** → **Add record**
 
-### 4.3 Redirecionar raiz para www (opcional)
+| Tipo | Nome | Destino | Proxy |
+|------|------|---------|-------|
+| `CNAME` | `www` | URL fornecida pelo Railway | Habilitado (nuvem laranja) |
 
-No Cloudflare → **Rules** → **Redirect Rules**:
+3. Aguarde a propagação do DNS (geralmente < 5 minutos com Cloudflare)
+
+### 4.3 HTTPS
+
+Com o proxy Cloudflare ativo o HTTPS é gerenciado automaticamente. Configure em **SSL/TLS** → modo **Full**.
+
+### 4.4 Redirecionar raiz para www (opcional)
+
+Cloudflare → **Rules** → **Redirect Rules** → **Create rule**:
 
 ```
 Se: hostname = queromaisdocesfinos.com.br
-Redirecionar para: https://www.queromaisdocesfinos.com.br${uri}
+Ação: redirecionar para https://www.queromaisdocesfinos.com.br${uri}
 Status: 301
 ```
-
-Adicione também o registro A na raiz:
-
-| Tipo | Nome | Valor | Proxy |
-|------|------|-------|-------|
-| `A` | `@` | `192.0.2.1` (placeholder) | Habilitado |
-
-> O Cloudflare proxy intercepta antes de chegar ao placeholder — o redirect rule funciona corretamente.
-
-### 4.4 HTTPS
-
-Com o proxy Cloudflare ativo, o HTTPS é gerenciado automaticamente. Em **SSL/TLS** → selecione modo **Full** (ou **Flexible** se o Railway não tiver cert próprio, mas Full é preferível).
 
 ---
 
 ## 5. Alternativa: Cloudflare Tunnel (expor VM local)
 
-Se preferir rodar o projeto na sua própria VM (ex: VPS, máquina local, Raspberry Pi) em vez do Railway, o **Cloudflare Tunnel** expõe o servidor local pela internet sem abrir portas no roteador.
+Se preferir rodar na sua própria VM ou servidor em vez do Railway, o Cloudflare Tunnel expõe o servidor local pela internet sem precisar abrir portas.
 
-### 5.1 Instalar o cloudflared na VM
+### 5.1 Rodar a aplicação na VM
+
+```bash
+# Clonar o repositório
+git clone https://github.com/SEU_USUARIO/confeitaria-projeto.git
+cd confeitaria-projeto/confeitaria
+
+# Compilar e rodar
+mvn clean package -DskipTests
+java -jar target/confeitaria-1.0.0.jar \
+  --app.images.dir=../Imagens \
+  --app.admin.password=SuaSenhaForte
+```
+
+### 5.2 Instalar o cloudflared
 
 ```bash
 # Debian/Ubuntu
 curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb -o cloudflared.deb
 sudo dpkg -i cloudflared.deb
-
-# Ou via script
-curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | sudo tee /usr/share/keyrings/cloudflare-main.gpg > /dev/null
 ```
 
-### 5.2 Autenticar e criar o tunnel
+### 5.3 Criar e configurar o tunnel
 
 ```bash
-# Faz login no Cloudflare (abre browser)
+# Login (abre browser)
 cloudflared tunnel login
 
-# Cria o tunnel
+# Criar o tunnel
 cloudflared tunnel create confeitaria
 
-# Anota o ID gerado, ex: abc123-...
+# Anotar o ID gerado (ex: abc123-...)
 ```
 
-### 5.3 Configurar o arquivo de tunnel
-
-Crie `~/.cloudflared/config.yml`:
+Criar `~/.cloudflared/config.yml`:
 
 ```yaml
 tunnel: abc123-SEU-TUNNEL-ID
@@ -266,26 +235,17 @@ ingress:
   - service: http_status:404
 ```
 
-### 5.4 Adicionar o DNS no Cloudflare
+### 5.4 Apontar o DNS e iniciar
 
 ```bash
+# Adiciona CNAME no Cloudflare automaticamente
 cloudflared tunnel route dns confeitaria www.queromaisdocesfinos.com.br
-```
 
-### 5.5 Rodar o Spring Boot e o tunnel
-
-Em dois terminais separados (ou via `systemd`):
-
-```bash
-# Terminal 1 — aplicação
-cd confeitaria
-mvn spring-boot:run
-
-# Terminal 2 — tunnel
+# Iniciar o tunnel
 cloudflared tunnel run confeitaria
 ```
 
-### 5.6 Rodar como serviço (inicialização automática)
+### 5.5 Rodar como serviço (inicialização automática)
 
 ```bash
 sudo cloudflared service install
@@ -302,8 +262,8 @@ After=network.target
 
 [Service]
 User=SEU_USUARIO
-WorkingDirectory=/caminho/para/confeitaria
-ExecStart=/usr/bin/java -jar target/confeitaria-*.jar
+WorkingDirectory=/caminho/para/confeitaria-projeto/confeitaria
+ExecStart=/usr/bin/java -jar target/confeitaria-1.0.0.jar
 EnvironmentFile=/etc/confeitaria.env
 Restart=always
 
@@ -311,12 +271,12 @@ Restart=always
 WantedBy=multi-user.target
 ```
 
-Arquivo `/etc/confeitaria.env`:
+`/etc/confeitaria.env`:
 
 ```env
 APP_ADMIN_PASSWORD=SuaSenhaForte
-APP_IMAGES_DIR=/caminho/para/Imagens
-APP_UPLOAD_DIR=/caminho/para/uploads
+APP_IMAGES_DIR=/caminho/para/confeitaria-projeto/Imagens
+APP_UPLOAD_DIR=/caminho/para/confeitaria-projeto/uploads
 SPRING_THYMELEAF_CACHE=true
 ```
 
@@ -331,30 +291,22 @@ sudo systemctl start confeitaria
 
 ### Railway (deploy automático)
 
-Por padrão o Railway faz **deploy automático** a cada push na branch `main`:
+Basta fazer push na branch `main`:
 
 ```bash
-# Faça as alterações localmente
 git add .
 git commit -m "sua alteração"
 git push origin main
-# → Railway detecta o push e faz redeploy automaticamente
+# Railway detecta o push e faz redeploy automaticamente
 ```
-
-Para desativar o deploy automático: Railway → serviço → **Settings** → **Deploy** → desmarcar **Auto Deploy**.
 
 ### VM com Cloudflare Tunnel
 
 ```bash
-# Puxar atualizações
-cd confeitaria-projeto-master
+cd confeitaria-projeto
 git pull origin main
-
-# Recompilar
 cd confeitaria
 mvn clean package -DskipTests
-
-# Reiniciar o serviço
 sudo systemctl restart confeitaria
 ```
 
@@ -362,25 +314,21 @@ sudo systemctl restart confeitaria
 
 ## 7. Checklist de segurança para produção
 
-Antes de expor o sistema publicamente:
-
-- [ ] Trocar `APP_ADMIN_PASSWORD` — nunca usar `confeitaria123` em produção
+- [ ] Trocar `APP_ADMIN_PASSWORD` — nunca usar `confeitaria123`
 - [ ] Trocar `APP_ADMIN_USERNAME` para algo não óbvio
-- [ ] Definir `SPRING_THYMELEAF_CACHE=true` (performance)
-- [ ] Verificar se `/h2-console` está acessível apenas com login admin
-- [ ] Certificar que o `.gitignore` exclui `data/`, `uploads/` e `*.mv.db`
-- [ ] Não commitar o `application.properties` com senhas reais — usar variáveis de ambiente
-- [ ] Configurar HTTPS (Railway e Cloudflare fazem isso automaticamente)
-- [ ] Considerar limitar o tamanho de upload (`spring.servlet.multipart.max-file-size`) conforme necessidade
-- [ ] Revisar a pasta `Imagens/` antes de commitar — não incluir arquivos sensíveis
+- [ ] Definir `SPRING_THYMELEAF_CACHE=true`
+- [ ] Confirmar que `data/`, `uploads/` e `*.mv.db` estão no `.gitignore`
+- [ ] Não commitar `application.properties` com senhas reais — usar variáveis de ambiente
+- [ ] HTTPS habilitado (Railway e Cloudflare fazem isso automaticamente)
+- [ ] Adicionar volumes persistentes no Railway se os dados forem importantes
 
 ---
 
-## Resumo rápido
+## Resumo
 
 | Objetivo | Solução |
 |----------|---------|
-| Publicar rapidamente sem servidor próprio | Railway (conecta ao GitHub, build automático) |
-| Domínio personalizado com HTTPS | Railway + Cloudflare DNS como proxy |
-| Rodar na sua própria VM e expor pela internet | Cloudflare Tunnel + systemd |
-| Atualizar após mudanças no código | `git push` (Railway) ou `git pull` + restart (VM) |
+| Publicar rapidamente sem servidor próprio | Railway + Dockerfile |
+| Domínio personalizado com HTTPS | Cloudflare DNS (proxy) na frente do Railway |
+| Rodar na sua VM e expor pela internet | Cloudflare Tunnel + systemd |
+| Atualizar após mudanças no código | `git push main` (Railway) · `git pull` + restart (VM) |

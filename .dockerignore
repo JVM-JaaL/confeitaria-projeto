@@ -1,0 +1,5 @@
+confeitaria/target/
+confeitaria/data/
+confeitaria/uploads/
+.git/
+.gitignore
