@@ -10,10 +10,16 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.Map;
 
+// Centraliza toda a lógica de rastreamento de marketing nas páginas públicas.
+// Responsável por: ler parâmetros UTM e ref da URL → salvar na sessão → injetar no model Thymeleaf.
+// Isso permite que o visitante chegue via link de campanha e o rastreamento persista mesmo
+// enquanto ele navega por outras páginas antes de enviar o formulário de contato.
+// Usado por: PublicController (todas as páginas públicas chamam enrichPublicModel)
 @Service
 @Slf4j
 public class PublicMarketingService {
 
+    // Chaves dos atributos de sessão — usadas também em PublicMarketingContext.fromSession()
     public static final String SK_REF = "marketing.ref";
     public static final String SK_UTM_SOURCE = "marketing.utm_source";
     public static final String SK_UTM_MEDIUM = "marketing.utm_medium";
@@ -21,6 +27,8 @@ public class PublicMarketingService {
     public static final String SK_UTM_TERM = "marketing.utm_term";
     public static final String SK_UTM_CONTENT = "marketing.utm_content";
 
+    // Passo 1: sincroniza UTM da URL para a sessão; Passo 2: salva ref; Passo 3: cria o contexto e
+    // injeta "marketing" no model para os templates Thymeleaf usarem
     public void enrichPublicModel(Model model, HttpServletRequest request, HttpSession session, String refParam) {
         syncQueryParamsToSession(request, session);
         if (refParam != null && !refParam.isBlank()) {
@@ -32,6 +40,7 @@ public class PublicMarketingService {
         model.addAttribute("ref", ctx.getRef());
     }
 
+    // Copia os parâmetros UTM da query string para a sessão (somente se não estiverem em branco)
     private void syncQueryParamsToSession(HttpServletRequest request, HttpSession session) {
         log.debug("Parâmetros UTM sincronizados na sessão: source={}", request.getParameter("utm_source"));
         putIfPresent(session, SK_UTM_SOURCE, request.getParameter("utm_source"));
@@ -47,6 +56,7 @@ public class PublicMarketingService {
         }
     }
 
+    // Copia os UTMs da sessão para o objeto Contact antes de salvar no banco — garante rastreamento completo
     public void applyStoredMarketingToContact(Contact contact, HttpSession session) {
         contact.setUtmSource(stringAttr(session, SK_UTM_SOURCE));
         contact.setUtmMedium(stringAttr(session, SK_UTM_MEDIUM));
@@ -60,7 +70,7 @@ public class PublicMarketingService {
         return v instanceof String s && !s.isBlank() ? s : null;
     }
 
-    /** redirect:/path com parâmetros extras + marketing da sessão (ref + UTM). */
+    // Gera uma string "redirect:/path?ref=...&utm_..." preservando o rastreamento de marketing
     public String redirectWithMarketing(String path, HttpSession session, Map<String, String> extraQueryParams) {
         String p = path.startsWith("/") ? path : "/" + path;
         UriComponentsBuilder b = UriComponentsBuilder.fromPath(p);

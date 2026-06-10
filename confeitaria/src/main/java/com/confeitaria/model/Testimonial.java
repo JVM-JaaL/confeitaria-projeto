@@ -4,6 +4,11 @@ import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
 
+// Depoimento de cliente exibido na página pública /depoimentos.
+// visible=false oculta o depoimento sem excluir.
+// rating: 1 a 5 estrelas.
+// Gerenciado em: /admin/depoimentos (ContentAdminController)
+// Exibido em: PublicController.depoimentos() → public/depoimentos.html
 @Data
 @Entity
 @Table(name = "testimonials")

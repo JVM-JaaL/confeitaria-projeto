@@ -8,6 +8,10 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 
+// Configuração global de produção — existe sempre uma única linha (singleton, id=1).
+// O campo estimatedMonthlyProductionUnits é usado por RecipeService para dividir o custo
+// fixo mensal por unidade: fixedPerUnit = totalFixo / estimatedMonthlyProductionUnits
+// Gerenciado em: /admin/gastos-mensais (formulário de configuração)
 @Data
 @Entity
 @Table(name = "cost_settings")

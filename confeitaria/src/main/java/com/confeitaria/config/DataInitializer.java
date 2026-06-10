@@ -7,6 +7,9 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+// Popula o banco de dados com dados iniciais na primeira vez que a aplicação sobe.
+// Cada bloco verifica se a tabela já tem dados antes de inserir, garantindo idempotência.
+// Depende de: todos os repositories de entidade. Não deve ser alterado em produção sem cuidado.
 @Component
 public class DataInitializer implements CommandLineRunner {
 
@@ -38,6 +41,7 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
+        // Configuração padrão de unidades mensais de produção (usado por RecipeService para rateio de custo fixo)
         if (!costSettingsRepo.existsById(CostSettings.SINGLETON_ID)) {
             var cs = new CostSettings();
             cs.setId(CostSettings.SINGLETON_ID);
@@ -45,6 +49,7 @@ public class DataInitializer implements CommandLineRunner {
             costSettingsRepo.save(cs);
         }
 
+        // Link UTM de exemplo — ajudar a entender a funcionalidade de rastreamento de marketing
         if (utmLinkRepo.count() == 0) {
             var utm = new UtmLink();
             utm.setName("Exemplo: Instagram → Contato");
@@ -56,7 +61,7 @@ public class DataInitializer implements CommandLineRunner {
             utmLinkRepo.save(utm);
         }
 
-        // Sample FAQs
+        // FAQs exibidas no site público em /perguntas-frequentes — gerenciadas em /admin/faqs
         if (faqRepo.count() == 0) {
             addFaq("Como faço um pedido?", "Entre em contato pelo formulário ou WhatsApp. Respondemos em até 24h para alinhar os detalhes do seu pedido.", 1);
             addFaq("Qual o prazo mínimo para encomendar?", "Recomendamos pelo menos 7 dias de antecedência para bolos decorados e 3 dias para doces finos.", 2);
@@ -65,7 +70,7 @@ public class DataInitializer implements CommandLineRunner {
             addFaq("Como é feito o pagamento?", "Pedimos 50% de entrada no momento da confirmação e o restante na entrega. Aceitamos Pix, cartão e dinheiro.", 5);
         }
 
-        // Sample referral links
+        // Códigos de indicação usados para rastrear de onde vieram os contatos
         if (referralRepo.count() == 0) {
             var ref = new ReferralLink();
             ref.setCode("INSTAGRAM");
@@ -78,7 +83,7 @@ public class DataInitializer implements CommandLineRunner {
             referralRepo.save(ref2);
         }
 
-        // Sample ingredients
+        // Ingredientes base usados em receitas — gerenciados em /admin/ingredientes
         if (ingredientRepo.count() == 0) {
             addIngredient("Farinha de Trigo", new BigDecimal("4.50"));
             addIngredient("Açúcar Refinado", new BigDecimal("5.00"));
@@ -92,25 +97,30 @@ public class DataInitializer implements CommandLineRunner {
             addIngredient("Chocolate Nobre 70%", new BigDecimal("80.00"));
         }
 
-        // Sample testimonials
+        // Depoimentos exibidos no site público em /depoimentos — gerenciados em /admin/depoimentos
         if (testimonialRepo.count() == 0) {
             addTestimonial("Mariana S.", "O bolo de aniversário ficou lindo e delicioso! Todos adoraram. Com certeza vou encomendar novamente!", 5);
             addTestimonial("Carlos R.", "Brigadeiros incríveis, derretem na boca. O atendimento foi super atencioso e o prazo foi cumprido direitinho.", 5);
             addTestimonial("Juliana M.", "Fiz a encomenda para o chá de bebê e superou todas as expectativas. As fotos não fazem jus ao sabor!", 5);
         }
 
+        // Fotos da galeria exibidas em /galeria — gerenciadas em /admin/galeria
         if (galleryItemRepo.count() == 0) {
             seedGalleryItems();
         }
 
+        // Vendas históricas de exemplo para o módulo financeiro (/admin/vendas)
         if (saleRepo.count() == 0) {
             seedSales();
         }
 
+        // Gastos mensais de exemplo para o cálculo de custo fixo por unidade (/admin/gastos-mensais)
         if (monthlyExpenseRepo.count() == 0) {
             seedMonthlyExpenses();
         }
     }
+
+    // ---- helpers de seed ----
 
     private void seedGalleryItems() {
         addGallery("Bolo de Chocolate com Morangos",
@@ -175,6 +185,7 @@ public class DataInitializer implements CommandLineRunner {
                 "Decoração: trufa dourada + flor marsala; brigadeiro recheado com Nutella + flor marsala.");
     }
 
+    // Custo zero nas vendas de seed — são dados históricos de receita sem custo registrado
     private void addSale(String name, String group, BigDecimal revenue, LocalDate date, String notes) {
         var s = new Sale();
         s.setProductName(name);
@@ -188,7 +199,7 @@ public class DataInitializer implements CommandLineRunner {
 
     private void seedMonthlyExpenses() {
         String ym = "2025-09";
-        // FIXO — custos recorrentes
+        // FIXO — custos recorrentes que entram no rateio por unidade de produção (RecipeService)
         addExpense(ym, "Enel",        new BigDecimal("116.42"), ExpenseType.FIXO);
         addExpense(ym, "Enel",        new BigDecimal("16.48"),  ExpenseType.FIXO);
         addExpense(ym, "Jolana",      new BigDecimal("74.96"),  ExpenseType.FIXO);
@@ -206,7 +217,7 @@ public class DataInitializer implements CommandLineRunner {
         addExpense(ym, "Embalagens",  new BigDecimal("110.40"), ExpenseType.FIXO);
         addExpense(ym, "Val Caixas",  new BigDecimal("94.63"),  ExpenseType.FIXO);
         addExpense(ym, "Papel Arroz", new BigDecimal("15.00"),  ExpenseType.FIXO);
-        // EVENTUAL — custos pontuais
+        // EVENTUAL — custos pontuais que NÃO entram no rateio fixo
         addExpense(ym, "Uber",        new BigDecimal("9.98"),   ExpenseType.EVENTUAL);
         addExpense(ym, "Uber",        new BigDecimal("34.03"),  ExpenseType.EVENTUAL);
         addExpense(ym, "Uber",        new BigDecimal("4.87"),   ExpenseType.EVENTUAL);

@@ -3,11 +3,16 @@ package com.confeitaria.util;
 import com.confeitaria.model.UtmLink;
 import org.springframework.web.util.UriComponentsBuilder;
 
+// Utilitário estático que monta a URL completa com parâmetros UTM a partir de um UtmLink.
+// Não tem estado — é chamado diretamente sem injeção.
+// Usado por: UtmLinkAdminController.visualizar() (exibe a URL gerada na tela de detalhe)
 public final class UtmLinkUrlBuilder {
 
     private UtmLinkUrlBuilder() {
     }
 
+    // Combina baseUrl + utm_source + utm_medium + utm_campaign + (opcionais) utm_term, utm_content
+    // Resultado: ex. "https://meusite.com/contato?utm_source=instagram&utm_medium=social&utm_campaign=doces_2026"
     public static String generateFullUrl(UtmLink link) {
         String base = link.getBaseUrl().trim();
         if (base.endsWith("/")) {

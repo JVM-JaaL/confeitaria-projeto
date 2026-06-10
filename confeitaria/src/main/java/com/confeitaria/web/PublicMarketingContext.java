@@ -4,9 +4,11 @@ import jakarta.servlet.http.HttpSession;
 import lombok.Getter;
 import org.springframework.web.util.UriComponentsBuilder;
 
-/**
- * Snapshot de ref (indicação) + parâmetros UTM na sessão, para construir links consistentes nas páginas públicas.
- */
+// Snapshot imutável dos parâmetros de marketing (ref + UTM) da sessão do visitante.
+// É criado por fromSession() em cada requisição e injetado no model Thymeleaf como "marketing".
+// Os templates usam marketing.url("/contato") para gerar links que mantêm o rastreamento enquanto
+// o visitante navega entre as páginas do site.
+// Usado por: PublicMarketingService (cria e popula), todos os templates públicos (leem)
 @Getter
 public class PublicMarketingContext {
 
@@ -27,6 +29,7 @@ public class PublicMarketingContext {
         this.utmContent = utmContent;
     }
 
+    // Reconstrói o contexto a partir dos atributos salvos na sessão HTTP pelo PublicMarketingService
     public static PublicMarketingContext fromSession(HttpSession session) {
         return new PublicMarketingContext(
                 str(session, PublicMarketingService.SK_REF),
@@ -46,7 +49,8 @@ public class PublicMarketingContext {
         return null;
     }
 
-    /** Caminho absoluto a partir da raiz da aplicação, com query de marketing. */
+    // Gera um caminho absoluto (ex: "/contato") com os parâmetros de marketing adicionados como query string.
+    // Chamado nos templates: th:href="${marketing.url('/contato')}"
     public String url(String path) {
         String p = path.startsWith("/") ? path : "/" + path;
         UriComponentsBuilder b = UriComponentsBuilder.fromPath(p);
@@ -54,6 +58,7 @@ public class PublicMarketingContext {
         return b.build().encode().toUriString();
     }
 
+    // Adiciona ref e UTM a qualquer UriComponentsBuilder — usado tanto em url() quanto no redirect
     public void appendQueryParams(UriComponentsBuilder b) {
         if (ref != null && !ref.isBlank()) {
             b.queryParam("ref", ref);
@@ -75,6 +80,7 @@ public class PublicMarketingContext {
         }
     }
 
+    // Verifica se há algum parâmetro UTM ativo — usado para decidir se exibe badge de rastreamento
     public boolean hasAnyUtm() {
         return utmSource != null || utmMedium != null || utmCampaign != null || utmTerm != null || utmContent != null;
     }

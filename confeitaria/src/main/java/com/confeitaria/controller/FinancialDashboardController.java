@@ -24,6 +24,12 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+// Controller da página de análise financeira avançada (/admin/financeiro).
+// Delega toda a lógica de agregação ao FinanceAnalyticsService e converte os resultados
+// em JSON (via Jackson ObjectMapper) para os gráficos Chart.js no template financeiro.html.
+// Os três blocos JSON são injetados via th:utext em <script type="application/json"> —
+// o JavaScript lê com JSON.parse(element.textContent) para evitar o escape do th:text.
+// Depende de: FinanceAnalyticsService (relatório), SaleRepository (lista de grupos para filtro)
 @Slf4j
 @Controller
 @RequestMapping("/admin")
@@ -31,7 +37,7 @@ public class FinancialDashboardController {
 
     private final FinanceAnalyticsService financeAnalyticsService;
     private final SaleRepository saleRepo;
-    private final ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper; // injetado automaticamente pelo Spring Boot (Jackson)
 
     public FinancialDashboardController(FinanceAnalyticsService financeAnalyticsService,
                                         SaleRepository saleRepo,
@@ -41,6 +47,8 @@ public class FinancialDashboardController {
         this.objectMapper = objectMapper;
     }
 
+    // GET /admin/financeiro?inicio=&fim=&produto=&grupo=
+    // Constrói o relatório, serializa os dados dos gráficos em JSON e popula o model
     @GetMapping("/financeiro")
     public String financeiro(Model model,
                              @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
@@ -54,15 +62,18 @@ public class FinancialDashboardController {
             fim = LocalDate.now();
         }
 
+        // Gera o relatório completo com todos os agrupamentos e rankings
         var report = financeAnalyticsService.buildReport(inicio, fim, produto, grupo);
         log.debug("Relatório financeiro gerado: {} vendas de {} a {}", report.getSaleCount(), inicio, fim);
 
+        // Lista de grupos distintos para o dropdown de filtro
         Set<String> grupos = saleRepo.findAllByOrderBySaleDateDesc().stream()
                 .map(s -> s.getProductGroup())
                 .filter(Objects::nonNull)
                 .filter(g -> !g.isBlank())
                 .collect(Collectors.toCollection(LinkedHashSet::new));
 
+        // Converte os dados dos gráficos para JSON — lidos pelo JavaScript em financeiro.html
         List<Map<String, Object>> dailyRows = report.getDailyPoints().stream().map(this::dailyRow).toList();
         List<Map<String, Object>> productRows = report.getProductMetrics().stream().map(this::productRow).toList();
         List<Map<String, Object>> pmRows = report.getProductMonthPoints().stream().map(this::productMonthRow).toList();
@@ -82,6 +93,7 @@ public class FinancialDashboardController {
         return "admin/financeiro";
     }
 
+    // Converte DailyPoint em Map para serialização JSON — chaves usadas pelo Chart.js em financeiro.html
     private Map<String, Object> dailyRow(DailyPoint d) {
         Map<String, Object> m = new HashMap<>();
         m.put("date", d.getDate().toString());
@@ -91,6 +103,7 @@ public class FinancialDashboardController {
         return m;
     }
 
+    // Converte ProductMetric em Map para serialização JSON
     private Map<String, Object> productRow(ProductMetric p) {
         Map<String, Object> m = new HashMap<>();
         m.put("name", p.getProductName());
@@ -103,6 +116,7 @@ public class FinancialDashboardController {
         return m;
     }
 
+    // Converte ProductMonthPoint em Map para serialização JSON
     private Map<String, Object> productMonthRow(ProductMonthPoint p) {
         Map<String, Object> m = new HashMap<>();
         m.put("label", p.getLabel());

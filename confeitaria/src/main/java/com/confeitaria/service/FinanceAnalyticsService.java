@@ -12,6 +12,9 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.*;
 
+// Motor de análise financeira: lê as vendas do período, aplica filtros e agrega em múltiplas dimensões.
+// Produz um FinanceReport com totais, rankings e séries temporais para o FinancialDashboardController.
+// Usado por: FinancialDashboardController (página /admin/financeiro)
 @Service
 @Slf4j
 public class FinanceAnalyticsService {
@@ -22,6 +25,12 @@ public class FinanceAnalyticsService {
         this.saleRepo = saleRepo;
     }
 
+    // Ponto de entrada principal. Fluxo:
+    // 1. Busca todas as vendas no período via SaleRepository
+    // 2. Aplica filtros opcionais de produto e grupo
+    // 3. Agrega por produto, por dia e por produto+mês
+    // 4. Monta listas de ranking (top lucro, pior margem, mais popular, etc.)
+    // 5. Retorna um FinanceReport completo para o controller serializar em JSON e enviar ao template
     public FinanceReport buildReport(LocalDate inicio, LocalDate fim, String produtoFiltro, String grupoFiltro) {
         List<Sale> inRange = saleRepo.findBySaleDateBetweenOrderBySaleDateAsc(inicio, fim);
         String pNorm = produtoFiltro != null ? produtoFiltro.trim().toLowerCase() : "";
@@ -34,6 +43,7 @@ public class FinanceAnalyticsService {
                 .filter(s -> gNorm.isEmpty() || Objects.equals(s.getProductGroup(), gNorm))
                 .toList();
 
+        // Totais globais do período
         BigDecimal totalCost = sum(filtered, Sale::getCost);
         BigDecimal totalRevenue = sum(filtered, Sale::getRevenue);
         BigDecimal totalProfit = sum(filtered, Sale::getProfit);
@@ -47,6 +57,7 @@ public class FinanceAnalyticsService {
                     .multiply(new BigDecimal("100"));
         }
 
+        // Agrupamento por nome de produto → lista de métricas ordenada por lucro decrescente
         Map<String, ProductAgg> byProduct = new LinkedHashMap<>();
         for (Sale s : filtered) {
             String name = s.getProductName() != null ? s.getProductName() : "(sem nome)";
@@ -59,6 +70,7 @@ public class FinanceAnalyticsService {
                 .sorted(Comparator.comparing(ProductMetric::getProfit).reversed())
                 .toList();
 
+        // Agrupamento por dia → série temporal para o gráfico de linha
         Map<LocalDate, DailyAgg> byDay = new TreeMap<>();
         for (Sale s : filtered) {
             LocalDate d = s.getSaleDate();
@@ -69,6 +81,7 @@ public class FinanceAnalyticsService {
                 .map(e -> new DailyPoint(e.getKey(), e.getValue().revenue, e.getValue().cost, e.getValue().profit))
                 .toList();
 
+        // Agrupamento por mês+produto → tabela de evolução de cada item ao longo do tempo
         Map<String, ProductAgg> byProductMonth = new LinkedHashMap<>();
         for (Sale s : filtered) {
             if (s.getSaleDate() == null) continue;
@@ -80,6 +93,7 @@ public class FinanceAnalyticsService {
                 .sorted(Comparator.comparing(ProductMonthPoint::getProfit).reversed())
                 .toList();
 
+        // Rankings — top 10 em cada dimensão
         List<ProductMetric> topLucro = productMetrics.stream().limit(10).toList();
         List<ProductMetric> menosLucro = productMetrics.stream()
                 .sorted(Comparator.comparing(ProductMetric::getProfit))
@@ -106,10 +120,12 @@ public class FinanceAnalyticsService {
                 topLucro, menosLucro, pioresMargem, melhoresMargem, maisPopulares);
     }
 
+    // Soma um campo de todas as vendas ignorando nulos
     private static BigDecimal sum(List<Sale> sales, java.util.function.Function<Sale, BigDecimal> fn) {
         return sales.stream().map(fn).filter(Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
+    // Acumula totais de um produto durante a iteração — convertido em ProductMetric ao final
     private static class ProductAgg {
         String name;
         String group;
@@ -131,6 +147,7 @@ public class FinanceAnalyticsService {
             profit = profit.add(s.getProfit());
         }
 
+        // Calcula margem percentual e converte para o objeto imutável usado fora do serviço
         ProductMetric toMetric() {
             BigDecimal margin = BigDecimal.ZERO;
             if (revenue.compareTo(BigDecimal.ZERO) > 0) {
@@ -140,6 +157,7 @@ public class FinanceAnalyticsService {
         }
     }
 
+    // Acumula totais de um único dia durante a iteração — convertido em DailyPoint ao final
     private static class DailyAgg {
         BigDecimal revenue = BigDecimal.ZERO;
         BigDecimal cost = BigDecimal.ZERO;
@@ -152,6 +170,7 @@ public class FinanceAnalyticsService {
         }
     }
 
+    // Relatório completo retornado por buildReport() — injetado no model pelo FinancialDashboardController
     @Getter
     public static class FinanceReport {
         private final LocalDate inicio;
@@ -164,14 +183,14 @@ public class FinanceAnalyticsService {
         private final BigDecimal totalProfit;
         private final BigDecimal totalQuantity;
         private final BigDecimal marginPercent;
-        private final List<ProductMetric> productMetrics;
-        private final List<DailyPoint> dailyPoints;
-        private final List<ProductMonthPoint> productMonthPoints;
-        private final List<ProductMetric> topByProfit;
-        private final List<ProductMetric> leastByProfit;
-        private final List<ProductMetric> worstMargin;
-        private final List<ProductMetric> bestMargin;
-        private final List<ProductMetric> mostPopular;
+        private final List<ProductMetric> productMetrics; // todos os produtos, por lucro decrescente
+        private final List<DailyPoint> dailyPoints;        // série temporal para o gráfico de linha
+        private final List<ProductMonthPoint> productMonthPoints; // produto × mês
+        private final List<ProductMetric> topByProfit;     // top 10 mais lucrativos
+        private final List<ProductMetric> leastByProfit;   // top 10 menos lucrativos
+        private final List<ProductMetric> worstMargin;     // top 10 pior margem %
+        private final List<ProductMetric> bestMargin;      // top 10 melhor margem %
+        private final List<ProductMetric> mostPopular;     // top 10 por quantidade vendida
 
         public FinanceReport(LocalDate inicio, LocalDate fim, String produtoFiltro, String grupoFiltro, int saleCount,
                              BigDecimal totalCost, BigDecimal totalRevenue, BigDecimal totalProfit, BigDecimal totalQuantity,
@@ -200,6 +219,7 @@ public class FinanceAnalyticsService {
         }
     }
 
+    // Métrica agregada por produto — usada nas tabelas e rankings do relatório financeiro
     @Getter
     public static class ProductMetric {
         private final String productName;
@@ -222,6 +242,7 @@ public class FinanceAnalyticsService {
         }
     }
 
+    // Ponto de dados diário — alimenta o gráfico de linha de evolução diária no financeiro.html
     @Getter
     public static class DailyPoint {
         private final LocalDate date;
@@ -237,9 +258,10 @@ public class FinanceAnalyticsService {
         }
     }
 
+    // Ponto de dados por produto+mês — alimenta o gráfico de barras de produto por mês no financeiro.html
     @Getter
     public static class ProductMonthPoint {
-        private final String label;
+        private final String label; // formato: "yyyy-MM | nome do produto"
         private final BigDecimal revenue;
         private final BigDecimal cost;
         private final BigDecimal profit;

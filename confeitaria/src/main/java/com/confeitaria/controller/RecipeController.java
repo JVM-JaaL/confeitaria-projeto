@@ -15,6 +15,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+// Gerencia ingredientes e receitas no painel admin.
+// O custo de produção completo (ingredientes + rateio fixo) é calculado via RecipeService.
+// Fórmula principal: fullProductionCost = recipe.getMarginalCost() + fixedPerUnit
+//                   recommendedSalePrice = fullProductionCost × 3,0
+// Depende de: RecipeService (cálculos de custo e parse de mês), repositories de receita e ingrediente
 @Slf4j
 @Controller
 @RequestMapping("/admin")
@@ -35,6 +40,8 @@ public class RecipeController {
     }
 
     // ---- INGREDIENTS ----
+
+    // GET /admin/ingredientes — lista todos os ingredientes em ordem alfabética
     @GetMapping("/ingredientes")
     public String ingredientes(Model model) {
         model.addAttribute("ingredients", ingredientRepo.findAllByOrderByNameAsc());
@@ -42,18 +49,21 @@ public class RecipeController {
         return "admin/ingredientes";
     }
 
+    // POST /admin/ingredientes/add — cadastra novo ingrediente
     @PostMapping("/ingredientes/add")
     public String addIngredient(@ModelAttribute Ingredient ing) {
         ingredientRepo.save(ing);
         return "redirect:/admin/ingredientes";
     }
 
+    // POST /admin/ingredientes/delete/{id} — remove ingrediente (não remove RecipeIngredients associados automaticamente)
     @PostMapping("/ingredientes/delete/{id}")
     public String deleteIngredient(@PathVariable Long id) {
         ingredientRepo.deleteById(id);
         return "redirect:/admin/ingredientes";
     }
 
+    // POST /admin/ingredientes/edit/{id} — atualiza o preço do ingrediente
     @PostMapping("/ingredientes/edit/{id}")
     public String editIngredient(@PathVariable Long id, @RequestParam BigDecimal pricePerKg) {
         ingredientRepo.findById(id).ifPresent(ing -> {
@@ -64,6 +74,8 @@ public class RecipeController {
     }
 
     // ---- RECIPES ----
+
+    // GET /admin/receitas — lista receitas com custo de produção e preço sugerido do mês atual
     @GetMapping("/receitas")
     public String receitas(Model model) {
         YearMonth ym = YearMonth.now();
@@ -71,11 +83,13 @@ public class RecipeController {
         model.addAttribute("recipes", recipeRepo.findAllByOrderByNameAsc());
         model.addAttribute("ingredients", ingredientRepo.findAllByOrderByNameAsc());
         model.addAttribute("newRecipe", new Recipe());
-        model.addAttribute("fixedAllocationPerUnit", fixedPerUnit);
-        model.addAttribute("costReferenceMonth", ym.toString());
+        model.addAttribute("fixedAllocationPerUnit", fixedPerUnit); // usado no template para calcular custo total
+        model.addAttribute("costReferenceMonth", ym.toString());    // exibido como referência do mês
         return "admin/receitas";
     }
 
+    // GET /admin/receitas/{id}?mes=yyyy-MM — detalhe da receita com todos os ingredientes e cálculo completo
+    // O parâmetro mes permite ver o custo de produção de meses anteriores
     @GetMapping("/receitas/{id}")
     public String recipeDetail(@PathVariable Long id,
                                @RequestParam(required = false) String mes,
@@ -90,9 +104,9 @@ public class RecipeController {
 
         log.debug("Calculando custo para receita {}, mês {}", id, ymStr);
 
-        BigDecimal marginal = recipe.getMarginalCost();
-        BigDecimal fullProductionCost = marginal.add(fixedPerUnit);
-        BigDecimal recommendedSalePrice = fullProductionCost.multiply(new BigDecimal("3.0"));
+        BigDecimal marginal = recipe.getMarginalCost();                      // ingredientes × 1,05
+        BigDecimal fullProductionCost = marginal.add(fixedPerUnit);          // + rateio fixo
+        BigDecimal recommendedSalePrice = fullProductionCost.multiply(new BigDecimal("3.0")); // × 3
 
         BigDecimal costPerGramFull = BigDecimal.ZERO;
         if (recipe.getYieldGrams() != null && recipe.getYieldGrams().compareTo(BigDecimal.ZERO) > 0) {
@@ -102,8 +116,8 @@ public class RecipeController {
         model.addAttribute("recipe", recipe);
         model.addAttribute("allIngredients", ingredientRepo.findAllByOrderByNameAsc());
         model.addAttribute("referenceMonth", ymStr);
-        model.addAttribute("prevMonth", ym.minusMonths(1).toString());
-        model.addAttribute("nextMonth", ym.plusMonths(1).toString());
+        model.addAttribute("prevMonth", ym.minusMonths(1).toString()); // navegação de mês anterior
+        model.addAttribute("nextMonth", ym.plusMonths(1).toString());  // navegação de mês seguinte
         model.addAttribute("monthlyFixedTotal", monthlyFixed);
         model.addAttribute("estimatedMonthlyUnits", units);
         model.addAttribute("fixedAllocationPerUnit", fixedPerUnit);
@@ -113,6 +127,7 @@ public class RecipeController {
         return "admin/receita-detalhe";
     }
 
+    // POST /admin/receitas/add — cria nova receita e redireciona para o detalhe onde se adicionam ingredientes
     @PostMapping("/receitas/add")
     public String addRecipe(@ModelAttribute Recipe recipe) {
         recipe.setIngredients(new ArrayList<>());
@@ -120,6 +135,7 @@ public class RecipeController {
         return "redirect:/admin/receitas/" + recipe.getId();
     }
 
+    // POST /admin/receitas/{id}/addIngredient — adiciona um ingrediente com quantidade à receita
     @PostMapping("/receitas/{id}/addIngredient")
     public String addRecipeIngredient(@PathVariable Long id,
                                       @RequestParam Long ingredientId,
@@ -134,18 +150,21 @@ public class RecipeController {
         return "redirect:/admin/receitas/" + id;
     }
 
+    // POST /admin/receitas/{id}/removeIngredient/{riId} — remove um ingrediente da receita
     @PostMapping("/receitas/{id}/removeIngredient/{riId}")
     public String removeRecipeIngredient(@PathVariable Long id, @PathVariable Long riId) {
         recipeIngredientRepo.deleteById(riId);
         return "redirect:/admin/receitas/" + id;
     }
 
+    // POST /admin/receitas/delete/{id} — exclui a receita (cascade remove os RecipeIngredients)
     @PostMapping("/receitas/delete/{id}")
     public String deleteRecipe(@PathVariable Long id) {
         recipeRepo.deleteById(id);
         return "redirect:/admin/receitas";
     }
 
+    // GET /admin/receitas/{id}/custo-json — endpoint JSON para consulta rápida de custo via AJAX
     @GetMapping("/receitas/{id}/custo-json")
     @ResponseBody
     public Map<String, Object> recipeCustoJson(@PathVariable Long id) {

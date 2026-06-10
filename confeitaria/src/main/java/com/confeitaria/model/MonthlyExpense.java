@@ -5,6 +5,11 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 
+// Representa um gasto em um determinado mês (formato yyyy-MM).
+// FIXO: recorrente — entra no rateio de custo fixo por unidade de produção (RecipeService).
+// EVENTUAL: pontual — registrado mas não divide o custo por receita.
+// Gerenciado em: /admin/gastos-mensais (MonthlyExpenseController)
+// Lido por: RecipeService.computeFixedAllocationPerUnit(), MonthlyExpenseController
 @Data
 @Entity
 @Table(name = "monthly_expenses")
@@ -13,7 +18,7 @@ public class MonthlyExpense {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /** Formato yyyy-MM (ex.: 2026-05) */
+    /** Formato yyyy-MM (ex.: 2026-05) — indexa os gastos por mês */
     @Column(nullable = false, length = 7)
     private String yearMonth;
 
