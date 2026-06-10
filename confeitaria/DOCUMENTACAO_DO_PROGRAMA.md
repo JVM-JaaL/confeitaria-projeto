@@ -79,7 +79,7 @@ Sistema web para confeitaria artesanal feito em **Java 17 + Spring Boot 3.2 + Th
   - `POST /contato`:
     - Salva `Contact` com data/hora, `source` e `referralCode` (se houver).
     - Se houver `ref`, incrementa `conversions` do `ReferralLink`.
-    - Redireciona para `/contato?sucesso=true`.
+    - Redireciona para `https://w.app/68oeeg` (WhatsApp da confeitaria).
 
 - **Admin (conteúdo + dashboard + upload)**: `com.confeitaria.controller.AdminController`
   - `GET /admin`: dashboard com totais, últimos contatos e contagens por origem/referral.
@@ -160,6 +160,10 @@ Pontos importantes em `src/main/resources/application.properties`:
 - **Conteúdo público**
   - Admin cadastra itens de galeria e depoimentos (e alterna visibilidade).
   - A home (`/`) exibe somente itens `visible=true`.
+- **Formulário de contato / pedido**
+  - Visitante preenche nome, e-mail, telefone, mensagem e origem.
+  - Os dados são salvos no banco com parâmetros UTM e referral capturados da sessão.
+  - Após salvar, o visitante é redirecionado para `https://w.app/68oeeg` (WhatsApp da confeitaria).
 - **Indicação/referral**
   - Usuário entra com `/?ref=INSTAGRAM` → incrementa visitas do código.
   - Usuário envia contato com `ref` → incrementa conversões do código.

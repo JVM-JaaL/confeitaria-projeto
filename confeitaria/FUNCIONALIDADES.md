@@ -107,6 +107,7 @@
 | Salvar contato | `repository/ContactRepository.java` | `save(contact)` |
 | Aplicar marketing | `web/PublicMarketingService.java` | `applyStoredMarketingToContact()` — preenche campos UTM do Contact com dados da sessão |
 | Incrementar indicação | `repository/ReferralLinkRepository.java` | `findByCode(ref)` + `link.conversions++` + `save()` |
+| Redirecionamento pós-envio | `controller/PublicController.java` | `return "redirect:https://w.app/68oeeg"` — envia o visitante para o WhatsApp da confeitaria após salvar |
 | Entidade | `model/Contact.java` | Todos os campos de contato + 5 campos UTM + `referralCode` + `source` |
 | Template | `templates/public/contato.html` | Form com `th:action`, campos + `<select>` source + hidden ref |
 
@@ -403,7 +404,7 @@ PUBLIC
   GET  /depoimentos                     → depoimentos
   GET  /perguntas-frequentes            → FAQ
   GET  /contato                         → form de pedido
-  POST /contato                         → submeter pedido
+  POST /contato                         → salva lead no banco → redireciona para WhatsApp
 
 ADMIN (requer login)
   GET  /admin                           → dashboard

@@ -302,7 +302,7 @@ Rotas do site público.
 | `GET /depoimentos` | `depoimentos()` | Passa testimonials visíveis. Renderiza `public/depoimentos`. |
 | `GET /perguntas-frequentes` | `faq()` | Passa FAQs visíveis ordenadas. Renderiza `public/faq`. |
 | `GET /contato` | `contato()` | Passa `Contact` vazio para o form. Renderiza `public/contato`. |
-| `POST /contato` | `submitContato()` | Salva `Contact` com UTM/ref da sessão. Incrementa `referralLink.conversions`. Redireciona com `?sucesso=true`. |
+| `POST /contato` | `submitContato()` | Salva `Contact` com UTM/ref da sessão. Incrementa `referralLink.conversions`. Redireciona para `https://w.app/68oeeg` (WhatsApp da confeitaria). |
 
 ---
 
